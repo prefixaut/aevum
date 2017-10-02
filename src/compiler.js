@@ -1,5 +1,3 @@
-var tokenizer = require('./tokenizer')
-
 module.exports = function (tokens) {
     var h = []
     var m = []
@@ -31,27 +29,22 @@ module.exports = function (tokens) {
 
         var arrs = []
         switch (t.type) {
-            case 'hh':
-            case 'h':
-                arrs.push(h)
-            case 'mm':
-            case 'm':
-                arrs.push(m)
-            case 'ss':
-            case 's':
-                arrs.push(s)
             case 'd':
             case 'dd':
             case 'ddd':
                 arrs.push(d)
+            case 'ss':
+            case 's':
+                arrs.push(s)
+            case 'mm':
+            case 'm':
+                arrs.push(m)
+            case 'hh':
+            case 'h':
+                arrs.push(h)
         }
 
-        var format = '[' + t.type + ']'
-        if (t.hasOwnProperty('format')) {
-            format = t.format.replace(/(?!\\)\b#/g, format)
-        }
-
-        var formatTokens = tokenizer(format)
+        var formatTokens = (t.hasOwnProperty('format')) ? t.format : [t]
         for (var k = 0; k < formatTokens.length; k++) {
             push(formatTokens[k], arrs)
         }
