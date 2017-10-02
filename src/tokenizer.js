@@ -1,6 +1,7 @@
-module.exports = function(format) {
+var tokenize = function(format) {
     var timesRegex = /^([h,m,s]{1,2}|[d]{1,3})$/i
     var formatRegex = /^\[([h,m,s]{1,2}|[d]{1,3})\]$/i
+    var hashRegex = /([^\\])(#)/
 
     // Length of the format-string
     var len = format.length
@@ -65,13 +66,13 @@ module.exports = function(format) {
 
             if (formatRegex.test(build)) {
                 // Remove square brackets
-                type = build.slice(1) + build.slice(-1)
+                type = (build.slice(1) + build.slice(-1)).toLowerCase()
                 expectFormat = false
             } else if (timesRegex.test(build)) {
-                type = build
+                type = build.toLowerCase()
                 expectFormat = true
             } else {
-                throw new SyntaxError('Invalid Brackets content "' + build + '"!')
+                throw new SyntaxError('Invalid Brackets content "' + build + '"  at position: ' + i + '!')
             }
 
             bracket = false
@@ -93,8 +94,7 @@ module.exports = function(format) {
                 build = ''
                 square = true
             }
-            optional = expectFormat
-            if (!optional) {
+            if (!(optional = expectFormat)) {
                 type = null
             }
             continue
@@ -119,7 +119,7 @@ module.exports = function(format) {
                     throw new SyntaxError('Invalid Format content at position: ' + (i - build.length) + '! The format may only be a time-format! Got "' + build + '" instead!')
                 }
 
-                type = build
+                type = build.toLowerCase()
                 square = false
             } else {
                 square = false
@@ -130,7 +130,8 @@ module.exports = function(format) {
                 optional: optional,
             }
             if (expectFormat) {
-                f.format = build
+                build = build.replace(hashRegex, '$1[' + type + ']')
+                f.format = tokenize(build)
             } else if (optional) {
                 f.format = '#'
             }
@@ -163,3 +164,5 @@ module.exports = function(format) {
 
     return tokens
 }
+
+module.exports = tokenize 
