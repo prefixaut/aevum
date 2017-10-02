@@ -1,3 +1,4 @@
+/* global describe, it */
 var chai = require('chai')
 var expect = chai.expect
 
@@ -18,12 +19,22 @@ describe('aevum', function() {
             }).to.not.throw(SyntaxError)
         })
 
-        it('should be an object', function() {
-            expect(format).to.be.a('object')
+        it('should throw syntax errors', function() {
+            expect(function() {
+                formatter('(should-fail)')
+            }).to.throw(SyntaxError)
+
+            expect(function() {
+                formatter('(mm)[[[ss]]]')
+            }).to.throw(SyntaxError)
+
+            expect(function() {
+                formatter('(mm)[[invalid]]')
+            }).to.throw(SyntaxError)
         })
 
-        it('should have compiled data', function() {
-            expect(format).to.have.property('_compiled').and.to.be.an('array')
+        it('should be an object', function() {
+            expect(format).to.be.a('object')
         })
 
         it('should have a format function', function() {
@@ -31,10 +42,17 @@ describe('aevum', function() {
         })
 
         it('should format', function() {
-            console.log(format._compiled)
             expect(function() {
                 format.format(1000)
             }).to.not.throw()
+
+            expect(format.format(1000)).to.be.equal('00m, 01s, 000ms cool')
+
+            expect(format.format({
+                seconds: 1
+            })).to.be.equal('00m, 01s, 000ms cool')
+
+            expect(format.format(3600000)).to.be.equal('Its very late! 01h 00m!00m, 00s, 000ms cool')
         })
     })
 })
