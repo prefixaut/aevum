@@ -1,0 +1,25 @@
+language: node_js
+node_js:
+  - "node"
+  - "iojs"
+  - "lts/*"
+  - "8"
+  - "7"
+  - "6"
+  - "5"
+  - "4"
+
+matrix:
+  allow_failures:
+    - node_js: "node"
+    - node_js: "iojs"
+
+cache:
+  directories:
+    - "node_modules"
+
+notifications:
+  email: false
+
+install: npm install
+script: npm test
