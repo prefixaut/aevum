@@ -1,0 +1,18 @@
+####
+## System Files
+####
+.DS_Store
+thumbs.db
+
+####
+## Package Manageers & Git
+####
+node_modules/
+npm-debug.log
+npm-debug.log.*
+!.gitkeep
+
+####
+## Configurations
+####
+.vscode
