@@ -1,0 +1,184 @@
+"use strict";
+exports.__esModule = true;
+var numberRegex = /^\d+$/;
+var types = {
+    h: -1,
+    m: 2,
+    s: 2,
+    d: 3
+};
+function tokenize(format) {
+    var oldState = 'STRING';
+    var state = 'STRING';
+    // Regex used to replace hashes with the format
+    var hashRegex = /([^\\])(#)/;
+    // Length of the format-string
+    var len = format.length;
+    // The nested-format content
+    var nestedBuild = '';
+    // The current string build
+    var build = '';
+    // Type of the current format that is being processed
+    var type = '';
+    var length = 0;
+    // If the format is optional or not
+    var optional = false;
+    // The compiled array of items
+    var tokens = new Array();
+    for (var i = 0; i < len; i++) {
+        var c = format.charAt(i);
+        switch (state) {
+            case 'REQUIRE-FORMAT':
+                if (c !== '[') {
+                    throw new SyntaxError("Expected a format assignment at position: " + i + "! Got \"" + c + "\" instead!");
+                }
+                state = 'IN-FORMAT';
+                break;
+            case 'ESCAPED':
+                state = oldState;
+                build += c;
+                break;
+            case 'STRING':
+                if (c === '\\') {
+                    oldState = state;
+                    state = 'ESCAPED';
+                    break;
+                }
+                if (c === '(') {
+                    state = 'IN-OPTIONAL';
+                    if (build !== '') {
+                        tokens.push(build);
+                    }
+                    build = '';
+                    break;
+                }
+                if (c === '[') {
+                    state = 'IN-FORMAT';
+                    if (build !== '') {
+                        tokens.push(build);
+                    }
+                    build = '';
+                    break;
+                }
+                build += c;
+                break;
+            case 'IN-OPTIONAL':
+                if (c === ')') {
+                    if (build.length === 0) {
+                        throw new SyntaxError("Invalid Syntax on position " + i + "! Closed optional defintion without setting a type!");
+                    }
+                    if (!types.hasOwnProperty(build[0])) {
+                        throw new SyntaxError("Unknown Type '" + build[0] + "' on position " + i + "!");
+                    }
+                    if (build.length > 1) {
+                        length = verifyType(build, i);
+                    }
+                    else {
+                        length = 1;
+                    }
+                    type = build[0];
+                    state = 'REQUIRE-FORMAT';
+                    optional = true;
+                    break;
+                }
+                build += c;
+                break;
+            case 'IN-FORMAT':
+                if (c === '\\') {
+                    oldState = state;
+                    state = 'ESCAPED';
+                    break;
+                }
+                if (c === '[') {
+                    state = 'IN-NESTED';
+                    break;
+                }
+                if (c === ']') {
+                    if (!optional) {
+                        if (build.length === 0) {
+                            throw new SyntaxError("Invalid Syntax on position " + i + "! An format-block may not be empty!");
+                        }
+                        if (!types.hasOwnProperty(build[0])) {
+                            throw new SyntaxError("Unknown Type '" + build[0] + "' on position " + i + "!");
+                        }
+                        if (build.length > 1) {
+                            length = verifyType(build, i);
+                        }
+                        else {
+                            length = 1;
+                        }
+                        type = build[0];
+                    }
+                    var token = {
+                        type: type,
+                        length: length,
+                        optional: optional
+                    };
+                    if (optional) {
+                        token.format = tokenize(build);
+                    }
+                    tokens.push(token);
+                    state = 'STRING';
+                    optional = false;
+                }
+                break;
+            case 'IN-NESTED':
+                if (c === ']') {
+                    if (nestedBuild.length === 0) {
+                        throw new SyntaxError("Invalid Syntax on position " + i + "! An format-block may not be empty!");
+                    }
+                    if (!types.hasOwnProperty(nestedBuild[0])) {
+                        throw new SyntaxError("Unknown Type '" + nestedBuild[0] + "' on position " + i + "!");
+                    }
+                    verifyType(nestedBuild, i);
+                    build += "[" + nestedBuild + "]";
+                    state = 'IN-FORMAT';
+                    break;
+                }
+                nestedBuild += c;
+                break;
+        }
+    }
+    if (state !== 'STRING') {
+        throw new SyntaxError('Invalid Syntax! Unexpected end of format!');
+    }
+    return tokens;
+}
+exports.tokenize = tokenize;
+function verifyType(input, position) {
+    var type = input[0];
+    var flag = false;
+    var numberBuild = '';
+    length = 1;
+    for (var i = 1; i < input.length; i++) {
+        var c = input[i];
+        if (i === 1) {
+            flag = numberRegex.test(c);
+            if (flag) {
+                numberBuild += c;
+            }
+        }
+        if (flag) {
+            if (!numberRegex.test(c)) {
+                throw new SyntaxError("Invalid Type-Definition on position " + (position + i) + "!" +
+                    "You may not mix the length with characters!");
+            }
+            numberBuild += c;
+            continue;
+        }
+        if (c !== type) {
+            throw new SyntaxError("Invalid Type-Defintion on position " + (position + i) + "!" +
+                "You may not mix the types!");
+        }
+        length++;
+    }
+    if (flag) {
+        length = parseInt(numberBuild, 10);
+    }
+    var max = types[type];
+    if (max > 0 && length > max) {
+        throw new SyntaxError("Invalid Type-Definition on position " + position + "!" +
+            ("The given length is bigger than allowed! Length: " + length + ", Max: " + max));
+    }
+    return length;
+}
