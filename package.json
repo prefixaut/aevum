@@ -1,11 +1,11 @@
 {
   "name": "aevum",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Highly customizable time formatter",
   "main": "dist/aevum.js",
   "scripts": {
     "test": "mocha",
-    "build": "tsc ./src/aevum.ts --outDir ./dist"
+    "build": "tsc -p ./"
   },
   "keywords": [
     "time",
