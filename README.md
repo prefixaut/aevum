@@ -33,7 +33,7 @@ function update() {
 }
 
 // GOOD
-let myFormat = Aevum('My own format: (hh)[#:\\[[mm]\\]][ss].[ddd]')
+let myFormat = new Aevum('My own format: (hh)[#:\\[[mm]\\]][ss].[ddd]')
 let tmp = 0
 function update() {
     myFormat.format(tmp)
