@@ -1,17 +1,17 @@
 "use strict";
-exports.__esModule = true;
-var compiler_1 = require("./compiler");
-var tokenizer_1 = require("./tokenizer");
-var Aevum = /** @class */ (function () {
-    function Aevum(formatString) {
+Object.defineProperty(exports, "__esModule", { value: true });
+const compiler_1 = require("./compiler");
+const tokenizer_1 = require("./tokenizer");
+class Aevum {
+    constructor(formatString) {
         this.formatString = formatString;
         this.tokens = tokenizer_1.tokenize(formatString);
         this.compiled = compiler_1.compile(this.tokens);
     }
-    Aevum.prototype.format = function (data) {
-        var time = this.asTime(data);
-        var build = '';
-        var arr;
+    format(data) {
+        const time = this.asTime(data);
+        let build = '';
+        let arr;
         if (time.hours && time.hours > 0) {
             arr = this.compiled.h;
         }
@@ -27,9 +27,9 @@ var Aevum = /** @class */ (function () {
         else {
             return '';
         }
-        var len = arr.length;
-        for (var i = 0; i < len; i++) {
-            var part = arr[i];
+        const len = arr.length;
+        for (let i = 0; i < len; i++) {
+            const part = arr[i];
             if (typeof part === 'string') {
                 build += part;
                 continue;
@@ -37,8 +37,8 @@ var Aevum = /** @class */ (function () {
             build += this.formatTimePart(part.type, part.length, time);
         }
         return build;
-    };
-    Aevum.prototype.asTime = function (data) {
+    }
+    asTime(data) {
         if (typeof data === 'undefined' || data === null) {
             throw new TypeError('The time may not be null/undefined!');
         }
@@ -51,7 +51,7 @@ var Aevum = /** @class */ (function () {
                 hours: (data / 3600000) | 0,
                 minutes: ((data / 60000) | 0) % 60,
                 seconds: ((data / 1000) | 0) % 60,
-                milliseconds: data % 1000
+                milliseconds: data % 1000,
             };
         }
         if (typeof data === 'object') {
@@ -62,13 +62,13 @@ var Aevum = /** @class */ (function () {
                 hours: 0,
                 minutes: 0,
                 seconds: 0,
-                milliseconds: 0
+                milliseconds: 0,
             }, data);
         }
-        throw new TypeError("Invalid type \"" + typeof data + "\"!");
-    };
-    Aevum.prototype.formatTimePart = function (type, length, time) {
-        var value = 0;
+        throw new TypeError(`Invalid type "${typeof data}"!`);
+    }
+    formatTimePart(type, length, time) {
+        let value = 0;
         switch (type) {
             case 'h':
                 value = time.hours || 0;
@@ -86,12 +86,12 @@ var Aevum = /** @class */ (function () {
         if (length === 1) {
             return value;
         }
-        var str = value.toString();
+        let str = value.toString();
         while (str.length < length) {
             str = '0' + str;
         }
         return str;
-    };
-    return Aevum;
-}());
-exports["default"] = Aevum;
+    }
+}
+exports.Aevum = Aevum;
+//# sourceMappingURL=aevum.js.map

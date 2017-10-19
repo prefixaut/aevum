@@ -1,36 +1,36 @@
 "use strict";
-exports.__esModule = true;
-var numberRegex = /^\d+$/;
-var types = {
+Object.defineProperty(exports, "__esModule", { value: true });
+const numberRegex = /^\d+$/;
+const types = {
     h: -1,
     m: 2,
     s: 2,
-    d: 3
+    d: 3,
 };
 function tokenize(format) {
-    var oldState = 'STRING';
-    var state = 'STRING';
+    let oldState = 'STRING';
+    let state = 'STRING';
     // Regex used to replace hashes with the format
-    var hashRegex = /([^\\])(#)/;
+    const hashRegex = /([^\\])(#)/;
     // Length of the format-string
-    var len = format.length;
+    const len = format.length;
     // The nested-format content
-    var nestedBuild = '';
+    let nestedBuild = '';
     // The current string build
-    var build = '';
+    let build = '';
     // Type of the current format that is being processed
-    var type = '';
-    var length = 0;
+    let type = '';
+    let length = 0;
     // If the format is optional or not
-    var optional = false;
+    let optional = false;
     // The compiled array of items
-    var tokens = new Array();
-    for (var i = 0; i < len; i++) {
-        var c = format.charAt(i);
+    const tokens = new Array();
+    for (let i = 0; i < len; i++) {
+        const c = format.charAt(i);
         switch (state) {
             case 'REQUIRE-FORMAT':
                 if (c !== '[') {
-                    throw new SyntaxError("Expected a format assignment at position: " + i + "! Got \"" + c + "\" instead!");
+                    throw new SyntaxError(`Expected a format assignment at position: ${i}! Got "${c}" instead!`);
                 }
                 state = 'IN-FORMAT';
                 break;
@@ -65,18 +65,19 @@ function tokenize(format) {
             case 'IN-OPTIONAL':
                 if (c === ')') {
                     if (build.length === 0) {
-                        throw new SyntaxError("Invalid Syntax on position " + i + "! Closed optional defintion without setting a type!");
+                        throw new SyntaxError(`Invalid Syntax on position ${i}! Closed optional defintion without setting a type!`);
                     }
                     if (!types.hasOwnProperty(build[0])) {
-                        throw new SyntaxError("Unknown Type '" + build[0] + "' on position " + i + "!");
+                        throw new SyntaxError(`Unknown Type '${build[0]}' on position ${i}!`);
                     }
                     if (build.length > 1) {
-                        length = verifyType(build, i);
+                        length = verifyType(build.toLowerCase(), i);
                     }
                     else {
                         length = 1;
                     }
                     type = build[0];
+                    build = '';
                     state = 'REQUIRE-FORMAT';
                     optional = true;
                     break;
@@ -96,42 +97,49 @@ function tokenize(format) {
                 if (c === ']') {
                     if (!optional) {
                         if (build.length === 0) {
-                            throw new SyntaxError("Invalid Syntax on position " + i + "! An format-block may not be empty!");
+                            throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`);
                         }
                         if (!types.hasOwnProperty(build[0])) {
-                            throw new SyntaxError("Unknown Type '" + build[0] + "' on position " + i + "!");
+                            throw new SyntaxError(`Unknown Type '${build[0]}' on position ${i}!`);
                         }
                         if (build.length > 1) {
-                            length = verifyType(build, i);
+                            length = verifyType(build.toLowerCase(), i);
                         }
                         else {
                             length = 1;
                         }
                         type = build[0];
                     }
-                    var token = {
-                        type: type,
-                        length: length,
-                        optional: optional
+                    const token = {
+                        type,
+                        length,
+                        optional,
                     };
                     if (optional) {
-                        token.format = tokenize(build);
+                        token.format = tokenize(build.replace(hashRegex, `$1[${type}${length}]`));
                     }
                     tokens.push(token);
+                    build = '';
                     state = 'STRING';
                     optional = false;
+                    break;
                 }
+                build += c;
                 break;
             case 'IN-NESTED':
+                if (c === '[') {
+                    throw new SyntaxError(`Invalid Syntax on position ${i}! You cannot nest an already nested format!`);
+                }
                 if (c === ']') {
                     if (nestedBuild.length === 0) {
-                        throw new SyntaxError("Invalid Syntax on position " + i + "! An format-block may not be empty!");
+                        throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`);
                     }
                     if (!types.hasOwnProperty(nestedBuild[0])) {
-                        throw new SyntaxError("Unknown Type '" + nestedBuild[0] + "' on position " + i + "!");
+                        throw new SyntaxError(`Unknown Type '${nestedBuild[0]}' on position ${i}!`);
                     }
-                    verifyType(nestedBuild, i);
-                    build += "[" + nestedBuild + "]";
+                    verifyType(nestedBuild.toLowerCase(), i);
+                    build += `[${nestedBuild}]`;
+                    nestedBuild = '';
                     state = 'IN-FORMAT';
                     break;
                 }
@@ -142,43 +150,43 @@ function tokenize(format) {
     if (state !== 'STRING') {
         throw new SyntaxError('Invalid Syntax! Unexpected end of format!');
     }
+    if (build !== '') {
+        tokens.push(build);
+    }
     return tokens;
 }
 exports.tokenize = tokenize;
 function verifyType(input, position) {
-    var type = input[0];
-    var flag = false;
-    var numberBuild = '';
-    length = 1;
-    for (var i = 1; i < input.length; i++) {
-        var c = input[i];
+    const type = input[0];
+    let isNumber = false;
+    let build = '';
+    let length = 1;
+    for (let i = 1; i < input.length; i++) {
+        const c = input[i];
         if (i === 1) {
-            flag = numberRegex.test(c);
-            if (flag) {
-                numberBuild += c;
-            }
+            isNumber = numberRegex.test(c);
         }
-        if (flag) {
+        if (isNumber) {
             if (!numberRegex.test(c)) {
-                throw new SyntaxError("Invalid Type-Definition on position " + (position + i) + "!" +
-                    "You may not mix the length with characters!");
+                throw new SyntaxError(`Invalid Type-Definition on position ${position + i}!` +
+                    `You may not mix the length with characters!`);
             }
-            numberBuild += c;
-            continue;
+            build += c;
         }
-        if (c !== type) {
-            throw new SyntaxError("Invalid Type-Defintion on position " + (position + i) + "!" +
-                "You may not mix the types!");
+        else if (c !== type) {
+            throw new SyntaxError(`Invalid Type-Defintion on position ${position + i}!` +
+                `You may not mix the types!`);
         }
         length++;
     }
-    if (flag) {
-        length = parseInt(numberBuild, 10);
+    if (isNumber) {
+        length = parseInt(build, 10);
     }
-    var max = types[type];
+    const max = types[type];
     if (max > 0 && length > max) {
-        throw new SyntaxError("Invalid Type-Definition on position " + position + "!" +
-            ("The given length is bigger than allowed! Length: " + length + ", Max: " + max));
+        throw new SyntaxError(`Invalid Type-Definition on position ${position}!` +
+            `The given length is bigger than allowed! Length: ${length}, Max: ${max}`);
     }
     return length;
 }
+//# sourceMappingURL=tokenizer.js.map

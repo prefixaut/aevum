@@ -1,22 +1,18 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 function compile(tokens) {
-    var h = new Array();
-    var m = new Array();
-    var s = new Array();
-    var d = new Array();
-    function push(value) {
-        var arrs = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            arrs[_i - 1] = arguments[_i];
-        }
-        arrs.forEach(function (arr) {
+    const h = new Array();
+    const m = new Array();
+    const s = new Array();
+    const d = new Array();
+    function push(value, ...arrs) {
+        arrs.forEach((arr) => {
             arr.push(value);
         });
     }
-    var length = tokens.length;
-    for (var i = 0; i < length; i++) {
-        var t = tokens[i];
+    const length = tokens.length;
+    for (let i = 0; i < length; i++) {
+        const t = tokens[i];
         if (typeof t === 'string') {
             push(t, h, m, s, d);
             continue;
@@ -28,7 +24,7 @@ function compile(tokens) {
             push(t, h, m, s, d);
             continue;
         }
-        var arrs = new Array();
+        const arrs = new Array();
         switch (t.type) {
             case 'd':
                 arrs.push(d);
@@ -39,17 +35,18 @@ function compile(tokens) {
             case 'h':
                 arrs.push(h);
         }
-        var formatTokens = (t.hasOwnProperty('format') && t.format != null) ? t.format : [t];
-        var formatLength = formatTokens.length;
-        for (var k = 0; k < formatLength; k++) {
-            push.apply(void 0, [formatTokens[k]].concat(arrs));
+        const formatTokens = (t.hasOwnProperty('format') && t.format != null) ? t.format : [t];
+        const formatLength = formatTokens.length;
+        for (let k = 0; k < formatLength; k++) {
+            push(formatTokens[k], ...arrs);
         }
     }
     return {
-        h: h,
-        m: m,
-        s: s,
-        d: d
+        h,
+        m,
+        s,
+        d,
     };
 }
 exports.compile = compile;
+//# sourceMappingURL=compiler.js.map
