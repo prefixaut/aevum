@@ -8,7 +8,7 @@ export interface Time {
     milliseconds?: number
 }
 
-export default class Aevum {
+export class Aevum {
 
     private tokens: Array<string | Token>
     private compiled: { [key: string]: Array<string | Token> }

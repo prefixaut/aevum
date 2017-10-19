@@ -16,7 +16,7 @@ const types: { [key: string]: number } = {
     d: 3,
 }
 
-export function tokenize(format: string): Array<(string|Token)> {
+export function tokenize(format: string): Array<(string | Token)> {
 
     let oldState: State = 'STRING'
     let state: State = 'STRING'
@@ -97,12 +97,13 @@ export function tokenize(format: string): Array<(string|Token)> {
                     }
 
                     if (build.length > 1) {
-                        length = verifyType(build, i)
+                        length = verifyType(build.toLowerCase(), i)
                     } else {
                         length = 1
                     }
 
                     type = build[0]
+                    build = ''
                     state = 'REQUIRE-FORMAT'
                     optional = true
                     break
@@ -134,7 +135,7 @@ export function tokenize(format: string): Array<(string|Token)> {
                         }
 
                         if (build.length > 1) {
-                            length = verifyType(build, i)
+                            length = verifyType(build.toLowerCase(), i)
                         } else {
                             length = 1
                         }
@@ -149,16 +150,23 @@ export function tokenize(format: string): Array<(string|Token)> {
                     }
 
                     if (optional) {
-                        token.format = tokenize(build)
+                        token.format = tokenize(build.replace(hashRegex, `$1[${type}${length}]`))
                     }
 
                     tokens.push(token)
+                    build = ''
                     state = 'STRING'
                     optional = false
+                    break
                 }
+
+                build += c
                 break
 
             case 'IN-NESTED':
+                if (c === '[') {
+                    throw new SyntaxError(`Invalid Syntax on position ${i}! You cannot nest an already nested format!`)
+                }
                 if (c === ']') {
                     if (nestedBuild.length === 0) {
                         throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`)
@@ -168,9 +176,10 @@ export function tokenize(format: string): Array<(string|Token)> {
                         throw new SyntaxError(`Unknown Type '${nestedBuild[0]}' on position ${i}!`)
                     }
 
-                    verifyType(nestedBuild, i)
+                    verifyType(nestedBuild.toLowerCase(), i)
 
                     build += `[${nestedBuild}]`
+                    nestedBuild = ''
                     state = 'IN-FORMAT'
                     break
                 }
@@ -184,42 +193,42 @@ export function tokenize(format: string): Array<(string|Token)> {
         throw new SyntaxError('Invalid Syntax! Unexpected end of format!')
     }
 
+    if (build !== '') {
+        tokens.push(build)
+    }
+
     return tokens
 }
 
 function verifyType(input: string, position: number): number {
     const type = input[0]
-    let flag = false
-    let numberBuild = ''
-    length = 1
+    let isNumber = false
+    let build = ''
+    let length = 1
 
     for (let i = 1; i < input.length; i++) {
         const c = input[i]
 
         if (i === 1) {
-            flag = numberRegex.test(c)
-            if (flag) {
-                numberBuild += c
-            }
+            isNumber = numberRegex.test(c)
         }
 
-        if (flag) {
+        if (isNumber) {
             if (!numberRegex.test(c)) {
                 throw new SyntaxError(`Invalid Type-Definition on position ${position + i}!` +
                     `You may not mix the length with characters!`)
             }
-            numberBuild += c
-            continue
-        }
-        if (c !== type) {
+            build += c
+        } else if (c !== type) {
             throw new SyntaxError(`Invalid Type-Defintion on position ${position + i}!` +
                 `You may not mix the types!`)
         }
+
         length++
     }
 
-    if (flag) {
-        length = parseInt(numberBuild, 10)
+    if (isNumber) {
+        length = parseInt(build, 10)
     }
 
     const max = types[type]
