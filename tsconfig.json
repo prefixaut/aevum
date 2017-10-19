@@ -1,11 +1,17 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "none",
+        "lib": [
+            "dom",
+            "es2015"
+        ],
+        "moduleResolution": "node",
         "strictNullChecks": true,
         "sourceMap": true,
         "importHelpers": true,
         "target": "es6",
-        "strict": true
+        "strict": true,
+        "outDir": "./dist"
     },
     "include": [
         "src/**/*"
