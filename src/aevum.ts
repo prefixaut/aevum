@@ -8,6 +8,13 @@ export interface Time {
     milliseconds?: number
 }
 
+export const TimeTypes: { [key: string]: number } = {
+    h: -1,
+    m: 2,
+    s: 2,
+    d: 3,
+}
+
 export class Aevum {
 
     private tokens: Array<string | Token>
@@ -20,18 +27,18 @@ export class Aevum {
         this.compiled = compile(this.tokens)
     }
 
-    public format(data: number|object): string {
-        const time = this.asTime(data)
+    public format(time: number | object, performPadding: boolean = false): string {
+        const timeObj = this.asTime(time)
         let build = ''
         let arr: Array<string | Token>
 
-        if (time.hours && time.hours > 0) {
+        if (timeObj.hours && timeObj.hours > 0) {
             arr = this.compiled.h
-        } else if (time.minutes && time.minutes > 0) {
+        } else if (timeObj.minutes && timeObj.minutes > 0) {
             arr = this.compiled.m
-        } else if (time.seconds && time.seconds > 0) {
+        } else if (timeObj.seconds && timeObj.seconds > 0) {
             arr = this.compiled.s
-        } else if (time.milliseconds && time.milliseconds > 0) {
+        } else if (timeObj.milliseconds && timeObj.milliseconds > 0) {
             arr = this.compiled.d
         } else {
             return ''
@@ -46,7 +53,7 @@ export class Aevum {
                 continue
             }
 
-            build += this.formatTimePart(part.type, part.length, time)
+            build += this.formatTimePart(part.type, part.length, timeObj, performPadding)
         }
 
         return build
@@ -82,7 +89,7 @@ export class Aevum {
         throw new TypeError(`Invalid type "${typeof data}"!`)
     }
 
-    private formatTimePart(type: string, length: number, time: Time) {
+    private formatTimePart(type: string, length: number, time: Time, padding: boolean) {
         let value = 0
 
         switch (type) {
@@ -100,7 +107,25 @@ export class Aevum {
                 break
         }
 
-        if (length === 1) {
+        if (padding) {
+            let tmp = 0
+            switch (type) {
+                case 'm':
+                    tmp = time.hours || 0
+                    break
+                case 's':
+                    tmp = time.minutes || 0
+                    break
+                case 'd':
+                    tmp = time.seconds || 0
+                    break
+            }
+            if (tmp > 0) {
+                length = TimeTypes[type]
+            }
+        }
+
+        if (length <= 1) {
             return value
         }
 

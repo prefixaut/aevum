@@ -1,3 +1,5 @@
+import { TimeTypes } from './aevum'
+
 export interface Token {
     type: string,
     length: number,
@@ -8,13 +10,6 @@ export interface Token {
 type State = 'STRING' | 'ESCAPED' | 'IN-OPTIONAL' | 'REQUIRE-FORMAT' | 'IN-FORMAT' | 'IN-NESTED'
 
 const numberRegex = /^\d+$/
-
-const types: { [key: string]: number } = {
-    h: -1,
-    m: 2,
-    s: 2,
-    d: 3,
-}
 
 export function tokenize(format: string): Array<(string | Token)> {
 
@@ -92,7 +87,7 @@ export function tokenize(format: string): Array<(string | Token)> {
                             `Invalid Syntax on position ${i}! Closed optional defintion without setting a type!`)
                     }
 
-                    if (!types.hasOwnProperty(build[0])) {
+                    if (!TimeTypes.hasOwnProperty(build[0])) {
                         throw new SyntaxError(`Unknown Type '${build[0]}' on position ${i}!`)
                     }
 
@@ -130,7 +125,7 @@ export function tokenize(format: string): Array<(string | Token)> {
                             throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`)
                         }
 
-                        if (!types.hasOwnProperty(build[0])) {
+                        if (!TimeTypes.hasOwnProperty(build[0])) {
                             throw new SyntaxError(`Unknown Type '${build[0]}' on position ${i}!`)
                         }
 
@@ -172,7 +167,7 @@ export function tokenize(format: string): Array<(string | Token)> {
                         throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`)
                     }
 
-                    if (!types.hasOwnProperty(nestedBuild[0])) {
+                    if (!TimeTypes.hasOwnProperty(nestedBuild[0])) {
                         throw new SyntaxError(`Unknown Type '${nestedBuild[0]}' on position ${i}!`)
                     }
 
@@ -231,7 +226,7 @@ function verifyType(input: string, position: number): number {
         length = parseInt(build, 10)
     }
 
-    const max = types[type]
+    const max = TimeTypes[type]
     if (max > 0 && length > max) {
         throw new SyntaxError(`Invalid Type-Definition on position ${position}!` +
             `The given length is bigger than allowed! Length: ${length}, Max: ${max}`)
