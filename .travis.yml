@@ -5,9 +5,6 @@ node_js:
   - "lts/*"
   - "8"
   - "7"
-  - "6"
-  - "5"
-  - "4"
 
 matrix:
   allow_failures:
@@ -22,4 +19,36 @@ notifications:
   email: false
 
 install: npm install
+
 script: npm test
+
+deploy:
+  - provider: npm
+    email: me@prefixaut.net
+    api_key:
+      secure: TODO
+    on:
+      tags: true
+      repo: prefixaut/aevum
+      branch: master
+  - provider: releases
+    api_key:
+      secure: TODO
+    file:
+      - dist/aevum.d.ts
+      - dist/aevum.js
+      - dist/aevum.js.map
+      - dist/compiler.d.ts
+      - dist/compiler.js
+      - dist/compiler.js.map
+      - dist/tokenizer.d.ts
+      - dist/tokenizer.js
+      - dist/tokenizer.js.map
+      - src/aevum.ts
+      - src/compiler.ts
+      - src/tokenizer.ts
+    skip_cleanup: true
+    on:
+      tags: true
+      repo: prefixaut/aevum
+      branch: master
