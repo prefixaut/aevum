@@ -174,11 +174,12 @@ describe('aevum', function() {
                     ]
                 }
             ].forEach(obj => {
+                const format = new aevum('(' + obj.type + ')[test]')
                 obj.empty.forEach(time => {
-                    expect(new aevum('(' + obj.type + ')[test]').format(time)).to.be.equal('')
+                    expect(format.format(time)).to.be.equal('')
                 })
                 obj.filled.forEach(time => {
-                    expect(new aevum('(' + obj.type + ')[test]').format(time)).to.be.equal('test')
+                    expect(format.format(time)).to.be.equal('test')
                 })
             })
         })
