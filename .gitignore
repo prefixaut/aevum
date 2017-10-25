@@ -12,6 +12,8 @@ npm-debug.log
 npm-debug.log.*
 !.gitkeep
 dist
+coverage
+.nyc_output
 
 ####
 ## Configurations
