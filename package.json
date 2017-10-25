@@ -2,21 +2,32 @@
   "name": "aevum",
   "version": "1.1.0",
   "description": "Highly customizable time formatter",
-  "main": "dist/aevum.js",
-  "scripts": {
-    "test": "mocha",
-    "build": "tsc -p ./"
-  },
+  "author": "PreFiXAUT <me@prefixaut.net>",
+  "license": "MIT",
   "keywords": [
     "time",
     "formatter",
     "customization"
   ],
-  "author": "PreFiXAUT <me@prefixaut.net>",
-  "license": "MIT",
+  "main": "dist/aevum.js",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "test": "mocha",
+    "coverage": "nyc mocha",
+    "prepublish": "npm run build",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prefixaut/aevum"
+  },
   "devDependencies": {
     "chai": "^4.1.2",
     "mocha": "^3.5.3",
+    "nyc": "^11.2.1",
     "tslint": "^5.7.0",
     "typescript": "^2.5.3"
   }
