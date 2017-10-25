@@ -1,3 +1,7 @@
+[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg)](https://github.com/prefixaut/aevum)
+[![npm](https://img.shields.io/npm/v/aevum.svg)](https://travis-ci.org/prefixaut/aevum)
+[![Coveralls](https://img.shields.io/coveralls/github/prefixaut/aevum.svg)](https://coveralls.io/github/prefixaut/aevum)
+
 # Aevum
 
 is a highly customizable time (not date!) formatter. It's syntax is simple and allows you to do whatever you need to do.
