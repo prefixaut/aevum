@@ -20,7 +20,9 @@ notifications:
 
 install: npm install
 
-script: npm test
+script:
+  - npm run coverage
+  - npm run coveralls
 
 deploy:
   - provider: npm

@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "test": "mocha",
-    "coverage": "nyc mocha",
+    "coverage": "nyc --reporter=lcov mocha",
+    "coveralls": "./node_modules/coveralls/bin/coveralls.js",
     "prepublish": "npm run build",
     "build": "tsc"
   },
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
+    "coveralls": "^3.0.0",
     "mocha": "^3.5.3",
     "nyc": "^11.2.1",
     "tslint": "^5.7.0",
