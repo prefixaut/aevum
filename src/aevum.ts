@@ -67,6 +67,12 @@ export class Aevum {
             if (isNaN(data)) {
                 throw new TypeError('The time may not be NaN!')
             }
+            if (!isFinite(data)) {
+                throw new TypeError('The number has to be finite!')
+            }
+            if (data < 0) {
+                throw new TypeError('The number has to be positive!')
+            }
             // Parse an timeing object from the number
             return {
                 hours: (data / 3600000) | 0,
@@ -110,29 +116,25 @@ export class Aevum {
         if (padding) {
             let tmp = 0
             switch (type) {
-                case 'm':
-                    tmp = time.hours || 0
-                    break
-                case 's':
-                    tmp = time.minutes || 0
-                    break
                 case 'd':
-                    tmp = time.seconds || 0
-                    break
+                    if (tmp === 0) {
+                        tmp = time.seconds || tmp
+                    }
+                case 's':
+                    if (tmp === 0) {
+                        tmp = time.minutes || tmp
+                    }
+                case 'm':
+                    if (tmp === 0) {
+                        tmp = time.hours || tmp
+                    }
             }
             if (tmp > 0) {
                 length = TimeTypes[type]
             }
         }
 
-        if (length <= 1) {
-            return value
-        }
-
-        let str = value.toString()
-        while (str.length < length) {
-            str = '0' + str
-        }
-        return str
+        const str = value.toString()
+        return '0'.repeat(length - str.length) + str
     }
 }

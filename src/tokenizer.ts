@@ -13,8 +13,8 @@ const numberRegex = /^\d+$/
 
 export function tokenize(format: string): Array<(string | Token)> {
 
-    let oldState: State = 'STRING'
-    let state: State = 'STRING'
+    let oldState = 'STRING' as State
+    let state = 'STRING' as State
 
     // Regex used to replace hashes with the format
     const hashRegex = /([^\\])(#)/
@@ -48,6 +48,13 @@ export function tokenize(format: string): Array<(string | Token)> {
                 break
 
             case 'ESCAPED':
+                // Adding the backslash/escape character again, since the content
+                // of an 'IN-FORMAT' will be tokenized again which causes the
+                // content not to be escaped properly, as the escape doesn't
+                // happen in the second round of the tokenizing
+                if (oldState === 'IN-FORMAT') {
+                    build += '\\'
+                }
                 state = oldState
                 build += c
                 break

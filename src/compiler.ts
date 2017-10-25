@@ -1,12 +1,12 @@
 import { Token } from './tokenizer'
 
-export function compile(tokens: Array<string|Token>) {
-    const h = new Array<string|Token>()
-    const m = new Array<string|Token>()
-    const s = new Array<string|Token>()
-    const d = new Array<string|Token>()
+export function compile(tokens: Array<string | Token>) {
+    const h = new Array<string | Token>()
+    const m = new Array<string | Token>()
+    const s = new Array<string | Token>()
+    const d = new Array<string | Token>()
 
-    function push(value: string|Token, ...arrs: Array<Array<string|Token>>) {
+    function push(value: string | Token, ...arrs: Array<Array<string | Token>>) {
         arrs.forEach((arr) => {
             arr.push(value)
         })
@@ -21,16 +21,12 @@ export function compile(tokens: Array<string|Token>) {
             continue
         }
 
-        if (typeof t !== 'object' || t === null || Array.isArray(t)) {
-            throw new TypeError('Invalid token "' + t + '"!')
-        }
-
         if (!t.optional) {
             push(t, h, m, s, d)
             continue
         }
 
-        const arrs = new Array<Array<string|Token>>()
+        const arrs = new Array<Array<string | Token>>()
         switch (t.type) {
             case 'd':
                 arrs.push(d)
@@ -42,7 +38,7 @@ export function compile(tokens: Array<string|Token>) {
                 arrs.push(h)
         }
 
-        const formatTokens = (t.hasOwnProperty('format') && t.format != null) ? t.format : [t]
+        const formatTokens = t.format || [t]
         const formatLength = formatTokens.length
         for (let k = 0; k < formatLength; k++) {
             push(formatTokens[k], ...arrs)
