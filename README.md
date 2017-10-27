@@ -1,6 +1,7 @@
-[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg)](https://github.com/prefixaut/aevum)
-[![npm](https://img.shields.io/npm/v/aevum.svg)](https://travis-ci.org/prefixaut/aevum)
-[![Coveralls](https://img.shields.io/coveralls/github/prefixaut/aevum.svg)](https://coveralls.io/github/prefixaut/aevum)
+[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg)](https://travis-ci.org/prefixaut/aevum)
+[![npm Version](https://img.shields.io/npm/v/aevum.svg)](https://www.npmjs.com/package/aevum)
+[![Code Climate](https://img.shields.io/codeclimate/coverage/github/prefixaut/aevum.svg)](https://codeclimate.com/github/prefixaut/aevum)
+[![npm License](https://img.shields.io/npm/l/aevum.svg)](https://www.npmjs.com/package/aevum)
 
 # Aevum
 
