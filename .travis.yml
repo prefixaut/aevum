@@ -20,9 +20,20 @@ notifications:
 
 install: npm install
 
+# Setting up Code-Climate
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
+# Build the project and run coverage tests
 script:
+  - npm run build
   - npm run coverage
-  - npm run coveralls
+
+# Sending results to Code-Climate
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 
 deploy:
   - provider: npm
