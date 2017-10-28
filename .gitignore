@@ -11,9 +11,14 @@ node_modules/
 npm-debug.log
 npm-debug.log.*
 !.gitkeep
+
+####
+## Output Files
+####
 dist
 coverage
 .nyc_output
+aevum.js
 
 ####
 ## Configurations
