@@ -4,7 +4,7 @@ var expect = chai.expect
 
 describe('aevum', function() {
 
-    var aevum = require('../dist/aevum').Aevum
+    var aevum = require('../dist/index').Aevum
 
     it('should exist as module', function() {
         expect(aevum).to.be.a('function')

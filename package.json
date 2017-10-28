@@ -9,7 +9,7 @@
     "formatter",
     "customization"
   ],
-  "main": "dist/aevum.js",
+  "main": "dist/index.js",
   "files": [
     "src",
     "dist"
