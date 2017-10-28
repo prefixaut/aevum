@@ -1,13 +1,12 @@
-/* global describe, it */
-var chai = require('chai')
-var expect = chai.expect
+if (typeof require === 'function') {
+    var Aevum = require('../aevum').Aevum
+    var chai = require('chai')
+    var expect = chai.expect
+}
 
-describe('aevum', function() {
-
-    var aevum = require('../dist/index').Aevum
-
-    it('should exist as module', function() {
-        expect(aevum).to.be.a('function')
+describe('module', function() {
+    it('should be a function', function() {
+        expect(Aevum).to.be.a('function')
     })
 
     describe('format', function() {
@@ -41,7 +40,7 @@ describe('aevum', function() {
                 'something(d)[here]',
             ].forEach(format => {
                 expect(function() {
-                    new aevum(format)
+                    new Aevum(format)
                 }).to.not.throw(SyntaxError)
             })
         })
@@ -98,17 +97,17 @@ describe('aevum', function() {
                 '(d)[[ha]]',
             ].forEach(format => {
                 expect(function() {
-                    new aevum(format)
+                    new Aevum(format)
                 }).to.throw(SyntaxError)
             })
         })
 
         it('should be an object', function() {
-            expect(new aevum('something')).to.be.a('object')
+            expect(new Aevum('something')).to.be.a('object')
         })
 
         it('should have a format function', function() {
-            expect(new aevum('something')).to.have.property('format').and.to.be.an('function')
+            expect(new Aevum('something')).to.have.property('format').and.to.be.an('function')
         })
 
         it('should format correctly', function() {
@@ -174,7 +173,7 @@ describe('aevum', function() {
                     ]
                 }
             ].forEach(obj => {
-                const format = new aevum('(' + obj.type + ')[test]')
+                const format = new Aevum('(' + obj.type + ')[test]')
                 obj.empty.forEach(time => {
                     expect(format.format(time)).to.be.equal('')
                 })
@@ -203,7 +202,7 @@ describe('aevum', function() {
                 }
             ].forEach(obj => {
                 obj.below.forEach(b => {
-                    const tmp = new aevum('(' + obj.type + ')[[' + b + ']]')
+                    const tmp = new Aevum('(' + obj.type + ')[[' + b + ']]')
                     expect(tmp.format(obj.time, true)).to.be.equal(b === 'd' ? '000' : '00')
                     expect(tmp.format(obj.time)).to.be.equal('0')
                 })
@@ -211,7 +210,7 @@ describe('aevum', function() {
         })
 
         it('should throw format errors', function() {
-            const format = new aevum('something');
+            const format = new Aevum('something');
             [
                 undefined,
                 null,
