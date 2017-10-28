@@ -2,9 +2,11 @@ if (typeof require === 'function') {
     var Aevum = require('../aevum').Aevum
     var chai = require('chai')
     var expect = chai.expect
+} else {
+    var Aevum = window.aevum.Aevum
 }
 
-describe('module', function() {
+describe('aevum', function() {
     it('should be a function', function() {
         expect(Aevum).to.be.a('function')
     })

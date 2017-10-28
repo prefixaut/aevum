@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "test": "mocha",
+    "test-browser": "mocha-phantomjs test/global.html",
     "coverage": "nyc --reporter=lcov mocha",
     "prepublish": "npm run build",
     "build": "webpack"
