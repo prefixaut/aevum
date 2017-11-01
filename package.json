@@ -12,7 +12,7 @@
   "main": "aevum.js",
   "files": [
     "src",
-    "dist"
+    "aevum.js"
   ],
   "scripts": {
     "test": "mocha",
