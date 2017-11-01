@@ -27,6 +27,7 @@ after_script:
 - "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
 deploy:
   - provider: npm
+    email: me@prefixaut.net
     api_key:
       secure: JP5+EPTlFykV1BtwM8SUavLHlBr2sN32WcyUaoijNpWoQ1u9+rY8mO7d2iAi/31T8+mRfTkpe1jFW5wtSY/GicLd8Fx80UilRR2wh8+NQ9zOi1s5JwQFI9gaSSIx1b+cGugOKipNnmADxnLK8uux+TcFnpFYQK4+tX/5NI14HZpnH7YMAtTfzhMg31l0fD3y+5jDxoCU/X22rz+8xDSj8kOYoy/Av9Bb5Y1c44o0L63i7BE/Zfe8y/J4L1DuX9r26QLYW6213cE2RSspb7UPduvskkFV8ff6nJCrazqz3T7MAY0v+VZTClFZX8vK1lH/jwqokOc9fKJC3fJguwPR6HHXnepcZyTE4dZe2vQ/V0q3u9vCWnn8ngF63czEMjdi3NnghaWwdmR4RyBS0DyDusBSI0cMxfYgHzoBRlPAcp2GRjco/kx9DJYMZcJBKowAtP+Km1UAVw83BeTiLxgtPsmD441ia9HhRDpJH8UFUXI5DpFPc4ETMlOnY+QN6a6CyDVrS5vP4G4Jepg+imqNv/oxqgRMVO4Eh3NANYUnzGS1uEtDRB3pnfWZi8EAFTatYblrdWGUA7MHMfsbawR2Si977oPuqIFzWGyH9sUG8Zt0VUItDYiqN780nPzRJxO6CdHKUecFl4ENRfjrakVypNqr72aqlOmY5Sru1Hxe8ok=
     file:
