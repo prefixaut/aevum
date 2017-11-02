@@ -1,11 +1,11 @@
-import { compile } from './compiler';
 import { Token, tokenize } from './tokenizer';
 
 export interface Time {
-    hours?: number;
-    minutes?: number;
-    seconds?: number;
-    milliseconds?: number;
+    positive: boolean;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    milliseconds: number;
 }
 
 export const TimeTypes: { [key: string]: number } = {
@@ -24,7 +24,7 @@ export class Aevum {
         private formatString: string,
     ) {
         this.tokens = tokenize(formatString);
-        this.compiled = compile(this.tokens);
+        this.compiled = this.shake(this.tokens);
     }
 
     public format(time: number | object, performPadding: boolean = false): string {
@@ -59,40 +59,136 @@ export class Aevum {
         return build;
     }
 
-    private asTime(data: number | object): Time {
-        if (typeof data === 'undefined' || data === null) {
-            throw new TypeError('The time may not be null/undefined!');
+    private shake(tokens: Array<string | Token>) {
+        const h = new Array<string | Token>();
+        const m = new Array<string | Token>();
+        const s = new Array<string | Token>();
+        const d = new Array<string | Token>();
+
+        function push(value: string | Token, ...arrs: Array<Array<string | Token>>) {
+            arrs.forEach((arr) => {
+                arr.push(value);
+            });
         }
+
+        const length = tokens.length;
+        for (let i = 0; i < length; i++) {
+            const t = tokens[i];
+
+            if (typeof t === 'string') {
+                push(t, h, m, s, d);
+                continue;
+            }
+
+            if (!t.optional) {
+                push(t, h, m, s, d);
+                continue;
+            }
+
+            const arrs = new Array<Array<string | Token>>();
+            switch (t.type) {
+                case 'd':
+                    arrs.push(d);
+                case 's':
+                    arrs.push(s);
+                case 'm':
+                    arrs.push(m);
+                case 'h':
+                    arrs.push(h);
+            }
+
+            const formatTokens = t.format || [t];
+            const formatLength = formatTokens.length;
+            for (let k = 0; k < formatLength; k++) {
+                push(formatTokens[k], ...arrs);
+            }
+        }
+
+        return {
+            h,
+            m,
+            s,
+            d,
+        };
+    }
+
+    /**
+     * Creates a Time-Object from an number/timestamp or from another object.
+     *
+     * @param data The number/timestamp or another object
+     */
+    private asTime(data: any): Time {
+        let positive = true;
+        if (typeof data === 'undefined' || data === null) {
+            throw new TypeError('The time may not be null or undefined!');
+        }
+
         if (typeof data === 'number') {
             if (isNaN(data)) {
-                throw new TypeError('The time may not be NaN!');
+                throw new TypeError('The number may not be NaN!');
             }
+
             if (!isFinite(data)) {
-                throw new TypeError('The number has to be finite!');
+                throw new TypeError('The number may not be Infinite!');
             }
+
             if (data < 0) {
-                throw new TypeError('The number has to be positive!');
+                positive = false;
+                data = data * -1;
             }
+
             // Parse an timeing object from the number
             return {
+                positive,
                 hours: (data / 3600000) | 0,
                 minutes: ((data / 60000) | 0) % 60,
                 seconds: ((data / 1000) | 0) % 60,
                 milliseconds: data % 1000,
             };
         }
+
         if (typeof data === 'object') {
             if (Array.isArray(data)) {
                 throw new TypeError('The time may not be an array!');
             }
-            return Object.assign({
-                hours: 0,
-                minutes: 0,
-                seconds: 0,
-                milliseconds: 0,
-            }, data);
+
+            if (data.hasOwnProperty('positive')) {
+                positive = !!data.positive;
+            }
+            const out = {
+                positive,
+            };
+
+            const map = {
+                hours: ['hours', 'hour', 'h'],
+                minutes: ['minutes', 'minute', 'm'],
+                seconds: ['seconds', 'second', 's'],
+                milliseconds: ['milliseconds', 'millisecond', 'milli', 'd'],
+            };
+            const keys = Object.keys(map);
+            for (let i = 0; i < keys.length; i++) {
+                out[keys[i]] = this.getNumberField(data, map[keys[i]]);
+            }
+
+            return out as Time;
         }
+
         throw new TypeError(`Invalid type "${typeof data}"!`);
+    }
+
+    private getNumberField(obj: any, fields: string[]): number {
+        for (let i = 0; i < fields.length; i++) {
+            if (!obj.hasOwnProperty(fields[i])) {
+                continue;
+            }
+            const value = obj[fields[i]];
+            if (isNaN(value) || !isFinite(value)) {
+                continue;
+            }
+            return value;
+        }
+
+        return 0;
     }
 
     private formatTimePart(type: string, length: number, time: Time, padding: boolean) {

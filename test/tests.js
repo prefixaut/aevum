@@ -224,8 +224,6 @@ describe('aevum', function() {
                 ['whatever'],
                 true,
                 false,
-                -1,
-                -2357654
             ].forEach(invalid => {
                 expect(function() {
                     format.format(invalid)
