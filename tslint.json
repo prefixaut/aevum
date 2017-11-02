@@ -26,7 +26,7 @@
         ],
         "semicolon": [
             true,
-            "never"
+            "always"
         ],
         "no-fallthrough": [
             "off"
