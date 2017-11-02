@@ -9,8 +9,7 @@
         "strictNullChecks": true,
         "sourceMap": true,
         "importHelpers": true,
-        "target": "es3",
-        "strict": true,
+        "target": "es3"
     },
     "include": [
         "src/**/*"
