@@ -11,7 +11,7 @@ type State = 'STRING' | 'ESCAPED' | 'IN-OPTIONAL' | 'REQUIRE-FORMAT' | 'IN-FORMA
 
 const numberRegex = /^\d+$/;
 
-export function tokenize(format: string): Array<(string | Token)> {
+export function tokenize(format: string, index = 0): Array<(string | Token)> {
 
     let oldState = 'STRING' as State;
     let state = 'STRING' as State;
@@ -42,7 +42,8 @@ export function tokenize(format: string): Array<(string | Token)> {
         switch (state) {
             case 'REQUIRE-FORMAT':
                 if (c !== '[') {
-                    throw new SyntaxError(`Expected a format assignment at position: ${i}! Got "${c}" instead!`);
+                    throw new SyntaxError(`Expected a format assignment at position: ${index + i}! `
+                        + `Got "${c}" instead!`);
                 }
                 state = 'IN-FORMAT';
                 break;
@@ -91,17 +92,22 @@ export function tokenize(format: string): Array<(string | Token)> {
                 if (c === ')') {
                     if (build.length === 0) {
                         throw new SyntaxError(
-                            `Invalid Syntax on position ${i}! Closed optional defintion without setting a type!`);
+                            `Invalid Syntax on position ${index + i}! `
+                            + `Closed optional defintion without setting a type!`);
                     }
 
-                    if (!TimeTypes.hasOwnProperty(build[0])) {
-                        throw new SyntaxError(`Unknown Type '${build[0]}' on position ${i}!`);
-                    }
-
-                    if (build.length > 1) {
-                        length = verifyType(build.toLowerCase(), i);
-                    } else {
+                    if (build === '+' || build === '-') {
                         length = 1;
+                    } else {
+                        if (!TimeTypes.hasOwnProperty(build[0])) {
+                            throw new SyntaxError(`Unknown Type '${build[0]}' on position ${index + i}!`);
+                        }
+
+                        if (build.length > 1) {
+                            length = verifyType(build.toLowerCase(), index + i);
+                        } else {
+                            length = 1;
+                        }
                     }
 
                     type = build[0];
@@ -129,15 +135,28 @@ export function tokenize(format: string): Array<(string | Token)> {
                 if (c === ']') {
                     if (!optional) {
                         if (build.length === 0) {
-                            throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`);
+                            throw new SyntaxError(`Invalid Syntax on position ${index + i}! `
+                                + `An format-block may not be empty!`);
+                        }
+
+                        if (build === '?') {
+                            tokens.push({
+                                type: '?',
+                                length: 1,
+                                optional: false,
+                            });
+                            build = '';
+                            optional = false;
+                            state = 'STRING';
+                            break;
                         }
 
                         if (!TimeTypes.hasOwnProperty(build[0])) {
-                            throw new SyntaxError(`Unknown Type '${build[0]}' on position ${i}!`);
+                            throw new SyntaxError(`Unknown Type '${build[0]}' on position ${index + i}!`);
                         }
 
                         if (build.length > 1) {
-                            length = verifyType(build.toLowerCase(), i);
+                            length = verifyType(build.toLowerCase(), index + i);
                         } else {
                             length = 1;
                         }
@@ -152,7 +171,13 @@ export function tokenize(format: string): Array<(string | Token)> {
                     };
 
                     if (optional) {
-                        token.format = tokenize(build.replace(hashRegex, `$1[${type}${length}]`));
+                        if (hashRegex.test(build)) {
+                            if (type === '+' || type === '-') {
+                                throw new SyntaxError(`The #-Type can not be combined with the Optiona-Type '${type}!`);
+                            }
+                            build = build.replace(hashRegex, `$1[${type}${length}]`);
+                        }
+                        token.format = tokenize(build, i - build.length - 4);
                     }
 
                     tokens.push(token);
@@ -167,18 +192,20 @@ export function tokenize(format: string): Array<(string | Token)> {
 
             case 'IN-NESTED':
                 if (c === '[') {
-                    throw new SyntaxError(`Invalid Syntax on position ${i}! You cannot nest an already nested format!`);
+                    throw new SyntaxError(`Invalid Syntax on position ${index + i}! `
+                        + `You cannot nest an already nested format!`);
                 }
                 if (c === ']') {
                     if (nestedBuild.length === 0) {
-                        throw new SyntaxError(`Invalid Syntax on position ${i}! An format-block may not be empty!`);
+                        throw new SyntaxError(`Invalid Syntax on position ${index + i}! `
+                            + `An format-block may not be empty!`);
                     }
 
                     if (!TimeTypes.hasOwnProperty(nestedBuild[0])) {
-                        throw new SyntaxError(`Unknown Type '${nestedBuild[0]}' on position ${i}!`);
+                        throw new SyntaxError(`Unknown Type '${nestedBuild[0]}' on position ${index + i}!`);
                     }
 
-                    verifyType(nestedBuild.toLowerCase(), i);
+                    verifyType(nestedBuild.toLowerCase(), index + i);
 
                     build += `[${nestedBuild}]`;
                     nestedBuild = '';

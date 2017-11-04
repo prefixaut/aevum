@@ -27,21 +27,17 @@ export class Aevum {
         this.compiled = this.shake(this.tokens);
     }
 
-    public format(time: number | object, performPadding: boolean = false): string {
-        const timeObj = this.asTime(time);
+    public format(content: number | object, performPadding: boolean = false): string {
+        const time = this.asTime(content);
         let build = '';
-        let arr: Array<string | Token>;
+        let arr: Array<string | Token> = [];
 
-        if (timeObj.hours && timeObj.hours > 0) {
-            arr = this.compiled.h;
-        } else if (timeObj.minutes && timeObj.minutes > 0) {
-            arr = this.compiled.m;
-        } else if (timeObj.seconds && timeObj.seconds > 0) {
-            arr = this.compiled.s;
-        } else if (timeObj.milliseconds && timeObj.milliseconds > 0) {
-            arr = this.compiled.d;
-        } else {
-            return '';
+        const keys = ['hours', 'minutes', 'seconds', 'milliseconds'];
+        for (let i = 0; i < keys.length; i++) {
+            if (!!keys[i]) {
+                arr = this.compiled[keys[i]];
+                break;
+            }
         }
 
         const len = arr.length;
@@ -53,63 +49,72 @@ export class Aevum {
                 continue;
             }
 
-            build += this.formatTimePart(part.type, part.length, timeObj, performPadding);
+            if (part.type === '?') {
+                if (time.positive) {
+                    build += '+';
+                } else if (!time.positive) {
+                    build += '-';
+                }
+                continue;
+            }
+
+            build += this.formatTimePart(part.type, part.length, time, performPadding);
         }
 
         return build;
     }
 
     private shake(tokens: Array<string | Token>) {
-        const h = new Array<string | Token>();
-        const m = new Array<string | Token>();
-        const s = new Array<string | Token>();
-        const d = new Array<string | Token>();
-
-        function push(value: string | Token, ...arrs: Array<Array<string | Token>>) {
-            arrs.forEach((arr) => {
-                arr.push(value);
-            });
-        }
+        const hours = new Array<string | Token>();
+        const minutes = new Array<string | Token>();
+        const seconds = new Array<string | Token>();
+        const milliseconds = new Array<string | Token>();
 
         const length = tokens.length;
         for (let i = 0; i < length; i++) {
             const t = tokens[i];
 
             if (typeof t === 'string') {
-                push(t, h, m, s, d);
+                this.pushIntoAll(t, hours, minutes, seconds, milliseconds);
                 continue;
             }
 
-            if (!t.optional) {
-                push(t, h, m, s, d);
+            if (!t.optional || t.type === '-' || t.type === '+') {
+                this.pushIntoAll(t, hours, minutes, seconds, milliseconds);
                 continue;
             }
 
             const arrs = new Array<Array<string | Token>>();
             switch (t.type) {
                 case 'd':
-                    arrs.push(d);
+                    arrs.push(milliseconds);
                 case 's':
-                    arrs.push(s);
+                    arrs.push(seconds);
                 case 'm':
-                    arrs.push(m);
+                    arrs.push(minutes);
                 case 'h':
-                    arrs.push(h);
+                    arrs.push(hours);
             }
 
             const formatTokens = t.format || [t];
             const formatLength = formatTokens.length;
             for (let k = 0; k < formatLength; k++) {
-                push(formatTokens[k], ...arrs);
+                this.pushIntoAll(formatTokens[k], ...arrs);
             }
         }
 
         return {
-            h,
-            m,
-            s,
-            d,
+            hours,
+            minutes,
+            seconds,
+            milliseconds,
         };
+    }
+
+    private pushIntoAll(value: string | Token, ...arrs: Array<Array<string | Token>>) {
+        arrs.forEach((arr) => {
+            arr.push(value);
+        });
     }
 
     /**
