@@ -8,6 +8,11 @@ export interface Time {
     milliseconds: number;
 }
 
+/**
+ * Constant to define Types for the tokenizer.
+ * Each type is only one letter long and has the
+ * maximum length as value.
+ */
 export const TimeTypes: { [key: string]: number } = {
     h: -1,
     m: 2,
@@ -17,9 +22,23 @@ export const TimeTypes: { [key: string]: number } = {
 
 export class Aevum {
 
+    /**
+     * Parsed tokens
+     */
     private tokens: Array<string | Token>;
+    /**
+     * Shook tokens mapped by the time-keys.
+     */
     private compiled: { [key: string]: Array<string | Token> };
 
+    /**
+     * Creates an Aevum-Object with the given format-string.
+     * Upon initializing a new Aevum-Object, it'll parse the format-string
+     * as well as shake the parsed content and saves it.
+     *
+     * @param formatString Format String string according to the Documentation.
+     * @see https://github.com/prefixaut/aevum
+     */
     constructor(
         private formatString: string,
     ) {
@@ -27,41 +46,65 @@ export class Aevum {
         this.compiled = this.shake(this.tokens);
     }
 
+    /**
+     * Formats the content into the format with which this Aevum-Object was
+     * initialized.
+     *
+     * @param content Any Number (not NaN/Infinite) or an Object which represents an existing time-object.
+     * @param performPadding If the time has a bigger unit, it'll automatically apply padding to the units below it.
+     */
     public format(content: number | object, performPadding: boolean = false): string {
+        // Builds the time object
         const time = this.asTime(content);
+        // The content we build together
         let build = '';
+        // The shook array that is being used.
         let arr: Array<string | Token> = [];
-
+        // Keys for both the time and compiled object
         const keys = ['hours', 'minutes', 'seconds', 'milliseconds'];
+
+        // Iterating over all keys, from biggest to smallest
         for (let i = 0; i < keys.length; i++) {
-            if (!!keys[i]) {
+            // If the time is bigger than 0, take that array
+            if (time[keys[i]] > 0) {
                 arr = this.compiled[keys[i]];
                 break;
             }
         }
 
-        const len = arr.length;
-        for (let i = 0; i < len; i++) {
-            const part = arr[i];
-
-            if (typeof part === 'string') {
-                build += part;
-                continue;
-            }
-
-            if (part.type === '?') {
-                if (time.positive) {
-                    build += '+';
-                } else if (!time.positive) {
-                    build += '-';
-                }
-                continue;
-            }
-
-            build += this.formatTimePart(part.type, part.length, time, performPadding);
+        // Rendering all parts of the array and putting it into the build-string.
+        for (let i = 0; i < arr.length; i++) {
+            build += this.renderPart(arr[i], time, performPadding);
         }
 
         return build;
+    }
+
+    private renderPart(part: string | Token, time: Time, padding: boolean): string {
+        if (typeof part === 'string') {
+            return part;
+        }
+
+        // Handle special type '?'
+        if (part.type === '?') {
+            return (time.positive) ? '+' : '-';
+        }
+
+        // Handle special type '+' and '-'
+        if (part.type === '-' || part.type === '+') {
+            let build = '';
+            if ((part.type === '-' && !time.positive) || (part.type === '+' && time.positive)) {
+                if (part.format != null) {
+                    for (let i = 0; i < part.format.length; i++) {
+                        build += this.renderPart(part.format[i], time, padding);
+                    }
+                }
+            }
+            return build;
+        }
+
+        // Handle all the other types
+        return this.renderTimePart(part.type, part.length, time, padding);
     }
 
     private shake(tokens: Array<string | Token>) {
@@ -84,22 +127,22 @@ export class Aevum {
                 continue;
             }
 
-            const arrs = new Array<Array<string | Token>>();
+            const arrays = new Array<Array<string | Token>>();
             switch (t.type) {
                 case 'd':
-                    arrs.push(milliseconds);
+                    arrays.push(milliseconds);
                 case 's':
-                    arrs.push(seconds);
+                    arrays.push(seconds);
                 case 'm':
-                    arrs.push(minutes);
+                    arrays.push(minutes);
                 case 'h':
-                    arrs.push(hours);
+                    arrays.push(hours);
             }
 
             const formatTokens = t.format || [t];
             const formatLength = formatTokens.length;
             for (let k = 0; k < formatLength; k++) {
-                this.pushIntoAll(formatTokens[k], ...arrs);
+                this.pushIntoAll(formatTokens[k], ...arrays);
             }
         }
 
@@ -111,8 +154,8 @@ export class Aevum {
         };
     }
 
-    private pushIntoAll(value: string | Token, ...arrs: Array<Array<string | Token>>) {
-        arrs.forEach((arr) => {
+    private pushIntoAll(value: string | Token, ...arrays: Array<Array<string | Token>>) {
+        arrays.forEach((arr) => {
             arr.push(value);
         });
     }
@@ -142,7 +185,7 @@ export class Aevum {
                 data = data * -1;
             }
 
-            // Parse an timeing object from the number
+            // Parse an timing object from the number
             return {
                 positive,
                 hours: (data / 3600000) | 0,
@@ -196,7 +239,7 @@ export class Aevum {
         return 0;
     }
 
-    private formatTimePart(type: string, length: number, time: Time, padding: boolean) {
+    private renderTimePart(type: string, length: number, time: Time, padding: boolean) {
         let value = 0;
 
         switch (type) {
