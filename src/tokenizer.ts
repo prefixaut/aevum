@@ -173,7 +173,8 @@ export function tokenize(format: string, index = 0): Array<(string | Token)> {
                     if (optional) {
                         if (hashRegex.test(build)) {
                             if (type === '+' || type === '-') {
-                                throw new SyntaxError(`The #-Type can not be combined with the Optiona-Type '${type}!`);
+                                throw new SyntaxError(
+                                    `The #-Type can not be combined with the Optional-Type '${type}!`);
                             }
                             build = build.replace(hashRegex, `$1[${type}${length}]`);
                         }
