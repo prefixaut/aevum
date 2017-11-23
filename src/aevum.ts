@@ -278,7 +278,11 @@ export class Aevum {
             }
         }
 
-        const str = value.toString();
-        return '0'.repeat(length - str.length) + str;
+        let str = value.toString();
+        const len = length - str.length;
+        for (let i = 0; i < len; i++) {
+            str = '0' + str;
+        }
+        return str;
     }
 }
