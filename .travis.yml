@@ -1,30 +1,40 @@
 language: node_js
+
 node_js:
 - node
 - iojs
 - lts/*
 - '8'
 - '7'
+
 matrix:
   allow_failures:
   - node_js: node
   - node_js: iojs
+
 cache:
   directories:
   - node_modules
+
 notifications:
   email: false
+
 install: npm install
+
 before_script:
-- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
-  > ./cc-test-reporter
-- chmod +x ./cc-test-reporter
-- "./cc-test-reporter before-build"
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+    > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - "./cc-test-reporter before-build"
+
 script:
-- npm run build
-- npm run coverage
+  - npm run build
+  - npm run test-browser
+  - npm run coverage
+
 after_script:
-- "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
+  - "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
+
 deploy:
   - provider: npm
     email: me@prefixaut.net
