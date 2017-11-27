@@ -2,7 +2,6 @@ language: node_js
 
 node_js:
 - node
-- iojs
 - lts/*
 - '8'
 - '7'
@@ -10,7 +9,6 @@ node_js:
 matrix:
   allow_failures:
   - node_js: node
-  - node_js: iojs
 
 cache:
   yarn: true
@@ -23,40 +21,40 @@ notifications:
 install: yarn
 
 before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
-    > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - "./cc-test-reporter before-build"
+- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+  > ./cc-test-reporter
+- chmod +x ./cc-test-reporter
+- "./cc-test-reporter before-build"
 
 script:
-  - yarn run build
-  - yarn run test-browser
-  - yarn run coverage
+- yarn run build
+- yarn run test-browser
+- yarn run coverage
 
 after_script:
-  - "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
+- "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
 
 deploy:
-  - provider: npm
-    email: me@prefixaut.net
-    api_key:
-      secure: JP5+EPTlFykV1BtwM8SUavLHlBr2sN32WcyUaoijNpWoQ1u9+rY8mO7d2iAi/31T8+mRfTkpe1jFW5wtSY/GicLd8Fx80UilRR2wh8+NQ9zOi1s5JwQFI9gaSSIx1b+cGugOKipNnmADxnLK8uux+TcFnpFYQK4+tX/5NI14HZpnH7YMAtTfzhMg31l0fD3y+5jDxoCU/X22rz+8xDSj8kOYoy/Av9Bb5Y1c44o0L63i7BE/Zfe8y/J4L1DuX9r26QLYW6213cE2RSspb7UPduvskkFV8ff6nJCrazqz3T7MAY0v+VZTClFZX8vK1lH/jwqokOc9fKJC3fJguwPR6HHXnepcZyTE4dZe2vQ/V0q3u9vCWnn8ngF63czEMjdi3NnghaWwdmR4RyBS0DyDusBSI0cMxfYgHzoBRlPAcp2GRjco/kx9DJYMZcJBKowAtP+Km1UAVw83BeTiLxgtPsmD441ia9HhRDpJH8UFUXI5DpFPc4ETMlOnY+QN6a6CyDVrS5vP4G4Jepg+imqNv/oxqgRMVO4Eh3NANYUnzGS1uEtDRB3pnfWZi8EAFTatYblrdWGUA7MHMfsbawR2Si977oPuqIFzWGyH9sUG8Zt0VUItDYiqN780nPzRJxO6CdHKUecFl4ENRfjrakVypNqr72aqlOmY5Sru1Hxe8ok=
-    file:
-    - aevum.js
-    - src/aevum.ts
-    - src/compiler.ts
-    - src/tokenizer.ts
-    skip_cleanup: true
-    on:
-      tags: true
-      repo: prefixaut/aevum
-      branch: master
-  - provider: releases
-    api_key:
-      secure: eklcITtVdzS6UMVz4ejF8f+lUJcS/wmco/D+hECGFLHO7x/HQJlDd+LDIuqc5pXufMyNf9JvuJJ4SZyWZQBgu1ZfxJVgC9zDsesP1PINJ2pHEmrUBe9Lr3MM+d1gH+Ljzz/d0ACnr7th6xcWgAXneh9pufrvGSvoqGc7VEZFKZ4NiXINTp+WufXKLPn3pHsTl2WEFOstG5WHFiOSYGLFAoLrLVa4Db8jghDDQicsOxRnKlnNk2grkfelFweCuDnAP4XdbmTtwCxmqvXM2bw5hglZ7Oe2YxI36HAZsPEc8qVH4jt9lZ/7Gx1SQmNrtTGLIoIvPoUG9domOh9Y7eCj0+ehws1g/IyKl5O8YgJlbgcy3aKyn1F8Y3eesbUuRWAXlAV7/RUNHU7NAwEuQXhya8KJxEBd2j8/hT2fz99pTM3OquxjOhIpLRYtsQ5sknjLQJx5DPbuqrjK8QHYNNFmOyrYXdNMC7YNRXmwUPZySLEkEgkGKJNzbdA0Fxubd1vbQsi0P8Bs90Jybp4maHeDwid/kY4Wprta4o1qxEfRn2+ykI1NwwZyKhgpWvwPHvSqaMtx+wMy6enrtH+YR/awqnxYlrKQ+GvXKox5DgCPa98HLkBPSHc81Dn/0GnGTSJC+YLVhJT2NbnJcqZuwthPgt3Z3Zb+E5tK0gZZXhglze8=
-    file: aevum.js
-    skip_cleanup: true
-    on:
-      tags: true
-      repo: prefixaut/aevum
-      branch: master
+- provider: npm
+  email: me@prefixaut.net
+  api_key:
+    secure: WhXNTFVGw1jZlmOOV1uTb4f+0mWQ+rz8S8lfEn8I4R1QBby9c8RdWIuwsugWXL1qSc5HIRZXPMDcoQkOb7mwMU2Pg5rt6QVxXnuyZ57zlik62s3xkUjbm1B0NbsnYtUD8E/abB4tqMqtWcrU7m9iDMTV4UQebQQ/gZVI1TeOlKA+7VWSYE3sEvOJxGBEMhmsQHF2rzs4kE+PrE72ohvoLI3L0l51upMdARnK57K+QXQKUsb3Se093poHAzVEtaC3Cbkp20M9s1PhJaA8jwr+lxFnOoURzfKMcPWoNcbvz5mvxelvUsfw946cBDvyDHsUg6/tC7SS6+9puC6LGPjsAa6805wW3BsKId79Gfjaeyg+ogYXv2jcyif4ZU8aBwhYY5WFYBz+qPLfFIYXC+dSVbVsYKyBX2dGV62BLw478QVFG7HPMa1jLFS3GRPhJ2TTHxMvd8RK/5ZraBbzFhgLB447fWGlKEpz3lBd1A8paM+HoMVyrvNv1UxyhRBOBsJQXjFVWuF5b9gpehSW5lMNX9ga4mk3zrpQCJTCuuEjLOAumtIDItrI6u0K6hBQNb/CbLUlMxSValzwEIkwBVo2sbtgk8j/TkkIN8YJetcuFERF6SbKlp6Td3aNjK9Ao3CJg0mgAVZJcFcFy581sqPi4h3nWREbvpH8rcLU2EdpjG8=
+  file:
+  - aevum.js
+  - src/aevum.ts
+  - src/compiler.ts
+  - src/tokenizer.ts
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: prefixaut/aevum
+    branch: master
+- provider: releases
+  api_key:
+    secure: eklcITtVdzS6UMVz4ejF8f+lUJcS/wmco/D+hECGFLHO7x/HQJlDd+LDIuqc5pXufMyNf9JvuJJ4SZyWZQBgu1ZfxJVgC9zDsesP1PINJ2pHEmrUBe9Lr3MM+d1gH+Ljzz/d0ACnr7th6xcWgAXneh9pufrvGSvoqGc7VEZFKZ4NiXINTp+WufXKLPn3pHsTl2WEFOstG5WHFiOSYGLFAoLrLVa4Db8jghDDQicsOxRnKlnNk2grkfelFweCuDnAP4XdbmTtwCxmqvXM2bw5hglZ7Oe2YxI36HAZsPEc8qVH4jt9lZ/7Gx1SQmNrtTGLIoIvPoUG9domOh9Y7eCj0+ehws1g/IyKl5O8YgJlbgcy3aKyn1F8Y3eesbUuRWAXlAV7/RUNHU7NAwEuQXhya8KJxEBd2j8/hT2fz99pTM3OquxjOhIpLRYtsQ5sknjLQJx5DPbuqrjK8QHYNNFmOyrYXdNMC7YNRXmwUPZySLEkEgkGKJNzbdA0Fxubd1vbQsi0P8Bs90Jybp4maHeDwid/kY4Wprta4o1qxEfRn2+ykI1NwwZyKhgpWvwPHvSqaMtx+wMy6enrtH+YR/awqnxYlrKQ+GvXKox5DgCPa98HLkBPSHc81Dn/0GnGTSJC+YLVhJT2NbnJcqZuwthPgt3Z3Zb+E5tK0gZZXhglze8=
+  file: aevum.js
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: prefixaut/aevum
+    branch: master
