@@ -1,0 +1,24 @@
+{
+  "name": "aevum",
+  "description": "Highly customizable time formatter",
+  "main": "aevum.js",
+  "authors": [
+    "PreFiXAUT <me@prefixaut.net>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "time",
+    "formatter",
+    "customization"
+  ],
+  "homepage": "https://github.com/prefixaut/aevum",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "coverage",
+    "debug.js"
+  ]
+}
