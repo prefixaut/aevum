@@ -1,37 +1,89 @@
-[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg?style=flat-square)](https://travis-ci.org/prefixaut/aevum)
-[![npm Version](https://img.shields.io/npm/v/aevum.svg?style=flat-square)](https://www.npmjs.com/package/aevum)
-[![Code Climate](https://img.shields.io/codeclimate/coverage/github/prefixaut/aevum.svg?style=flat-square)](https://codeclimate.com/github/prefixaut/aevum)
-[![npm License](https://img.shields.io/npm/l/aevum.svg?style=flat-square)](https://www.npmjs.com/package/aevum)
-
 # Aevum
 
-is a highly customizable time (not date!) formatter. It's syntax is simple and allows you to do whatever you need to do.
+[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg?style=flat-square)](https://travis-ci.org/prefixaut/aevum)
+[![npm Version](https://img.shields.io/npm/v/aevum.svg?style=flat-square)](https://www.npmjs.com/package/aevum)
+[![Bower](https://img.shields.io/bower/v/aevum.svg?style=flat-square)](https://github.com/prefixaut/aevum/releases)
+[![Code Climate](https://img.shields.io/codeclimate/coverage/github/prefixaut/aevum.svg?style=flat-square)](https://codeclimate.com/github/prefixaut/aevum)
+[![npm License](https://img.shields.io/npm/l/aevum.svg?style=flat-square)](https://spdx.org/licenses/MIT.html)
+
+is a highly customizable time (not date!) formatter. It's syntax is simple and allows you to do format times in a huge fashion!
 
 ## Installation
 
+### npm
+
 The best way to install `aevum` is via npm like so
+
 ```bash
-npm install --save aevum
+npm install aevum
+```
+
+### bower
+
+Installing aevum via bower:
+
+```bash
+bower install aevum
+```
+
+### git
+
+Cloning this repository:
+
+```bash
+git clone git@github.com:prefixaut/aevum.git
 ```
 
 ## Usage
 
-Aevum is getting compiled via [webpack](https://webpack.js.org) to make it compatible with CommonJS(2), AMD and as Global-Variable (If none of the previous is used).
-It also translates the ES6-Styled Typescript down to ES3 to make it compatible with browsers.
+Aevum is getting compiled via [webpack](https://webpack.js.org) to make use of its [advanced UMD (Univeral Module Defintion)](https://webpack.js.org/configuration/output/#output-librarytarget) to make it possible to use in as many environments as possible.
 
 ```javascript
 // CommonJS Module
 import { Aevum } from 'aevum';
 // or in typescript also via 'aevum/src/aevum' for interfaces
-new Aevum('...')
+new Aevum('...');
 
 // AMD Module
 define(['aevum'], function(aevum) {
-    new aevum.Aevum('...')
+    new aevum.Aevum('...');
 });
 
 // Global Variable
-new aevum.Aevum('...')
+new aevum.Aevum('...');
+```
+
+Here some basic examples on how it can be used
+
+```javascript
+import { Aevum } from 'aevum';
+
+const first = new Aevum('[hh]:[mm]:[ss].[ddd]');
+first.format(1); // -> "00:00:00.001"
+first.format({
+    hours: 1,
+    minutes: 23,
+    seconds: 45,
+    milliseconds: 999
+}); // -> "1:23:45.999"
+
+const second = new Aevum('(h)[[hh]:](m)[[mm]:](s)[[ss].](d)[[ddd]]');
+second.format(1); // -> "001"
+second.format({
+    seconds: 45,
+    milliseconds: 999
+}); // -> "45.999"
+second.format({
+    minutes: 23,
+    seconds: 45,
+    milliseconds: 999
+}); // -> "23:45.999"
+second.format({
+    hours: 1,
+    minutes: 23,
+    seconds: 45,
+    milliseconds: 999
+}); // -> "1:23:45.999"
 ```
 
 The system is thought to make a format once and then apply some data to it. This prevents overhead of re-compiling the format every time when a new value is being passed in. You can think of it like a `RegExp`.
@@ -83,15 +135,11 @@ Since `v1.2.0` there are now special timing-types:
 - `+` for positive times
 - `?` which outputs the strings `+` or `-` depending if the time is positive
 
-These are special Types and can not be used everywhere. The `+` and `-` Types can only be used in [optional format blocks](#optional-format-block) and may __not__ use the `#` as [Syntactic Sugar](#syntactic-sugar). The `?` Type on the other hand, can __only be used as [normal format block](#format-block)__.
+These are special Types and can not be used everywhere. The `+` and `-` Types can __only__ be used in [optional format blocks](#optional-format-block) and may __not__ use the `#` as [Syntactic Sugar](#syntactic-sugar). The `?` Type on the other hand, can __only be used as [normal format block](#format-block)__.
 
 ### Format Block
 
-An format block is simply put a placeholder. It will be replaced with the content of the type (hours, minutes, seconds or milliseconds) and allows you to specify padding. The format block is specified by surrounding the type with square-brackets (`[` and `]`) like this:
-
-```none
-[d]
-```
+An format block is simply put a placeholder. It will be replaced with the content of the type (hours, minutes, seconds or milliseconds) and allows you to specify padding. The format block is specified by surrounding the type with square-brackets (`[` and `]`) like this: `[d]`
 
 ### Padding
 
