@@ -185,6 +185,9 @@ export class Aevum {
                 data = data * -1;
             }
 
+            // Remove floating-points
+            data = data | 0;
+
             // Parse an timing object from the number
             return {
                 positive,
@@ -233,7 +236,7 @@ export class Aevum {
             if (isNaN(value) || !isFinite(value)) {
                 continue;
             }
-            return value;
+            return value | 0;
         }
 
         return 0;
