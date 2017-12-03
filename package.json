@@ -18,6 +18,7 @@
     "test": "mocha",
     "test-browser": "mocha-phantomjs test/global.html",
     "coverage": "nyc --reporter=lcov mocha",
+    "benchmark": "node ./test/benchmarks.js",
     "prepublish": "npm run build",
     "build": "webpack"
   },
@@ -26,6 +27,7 @@
     "url": "https://github.com/prefixaut/aevum"
   },
   "devDependencies": {
+    "benchmark": "^2.1.4",
     "chai": "^4.1.2",
     "mocha": "^3.5.3",
     "mocha-phantomjs": "^4.1.0",
