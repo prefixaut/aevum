@@ -1,5 +1,5 @@
 if (typeof require === 'function') {
-    var Aevum = require('../aevum').Aevum;
+    var Aevum = require('../dist').Aevum;
     var chai = require('chai');
     var expect = chai.expect;
 } else {
@@ -251,5 +251,12 @@ describe('aevum.format', function () {
                 format.format(invalid);
             }).to.throw(TypeError);
         });
+    });
+
+    it('should truncate decimals', function() {
+        const instance = new Aevum('(-)[-][d]');
+        expect(instance.format(0.1234)).to.be.equal('0');
+        expect(instance.format(1.1234)).to.be.equal('1');
+        epxect(instance.format(-1.1234)).to.be.equal('-1');
     });
 });

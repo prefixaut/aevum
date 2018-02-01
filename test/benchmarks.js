@@ -1,5 +1,6 @@
 const benchmark = require('benchmark');
-const aevum = require('../aevum');
+const chalk = require('chalk');
+const aevum = require('../dist');
 
 // Difference between AOT and JIT tokenizing
 (function(suite) {
@@ -14,13 +15,13 @@ const aevum = require('../aevum');
 
     suite.add('aot', function() {
         format.format(data);
-    })
-    .add('jit', function() {
+    }).add('jit', function() {
         const tmp = new aevum.Aevum(formatString);
         tmp.format(data);
     })
     .run();
-})(new benchmark.Suite('Aevum#format: Tokenizing', {
+})(new benchmark.Suite('Aevum#format: AOT vs JIT', {
+    onStart: startHandler,
     onCycle: cycleHandler,
     onComplete: completeHandler,
 }));
@@ -31,8 +32,7 @@ const aevum = require('../aevum');
 
     suite.add('timestamp', function() {
         instance.format(4926678);
-    })
-    .add('time-object', function() {
+    }).add('time-object', function() {
         instance.format({
             hours: 1,
             minutes: 23,
@@ -41,15 +41,41 @@ const aevum = require('../aevum');
         });
     })
     .run();
-})(new benchmark.Suite('Aevum#format: Timeing', {
+})(new benchmark.Suite('Aevum#format: Timestamp vs Time-Object', {
+    onStart: startHandler,
     onCycle: cycleHandler,
     onComplete: completeHandler,
 }));
 
+// Differnce between formatting it with the safe-flag
+(function(suite) {
+    const instance = new aevum.Aevum('[h]:[mm]:[ss].[ddd]');
+    const time = {
+        hours: 1,
+        minutes: 1,
+        seconds: 1,
+        milliseconds: 1,
+    };
+
+    suite.add('unsafe', function() {
+        instance.format(time)
+    }).add('safe', function() {
+        instance.format(time, false, true);
+    }).run();
+})(new benchmark.Suite('Aevum#format: Un-Safe vs Safe', {
+    onStart: startHandler,
+    onCycle: cycleHandler,
+    onComplete: completeHandler,
+}));
+
+function startHandler(event) {
+    console.log(chalk.bold.italic.green(event.currentTarget.name));
+}
+
 function cycleHandler(event) {
-    console.log(String(event.target));
+    console.log(chalk.yellow(String(event.target)));
 }
 
 function completeHandler() {
-    console.log('>> Fastest is ' + this.filter('fastest').map('name'));
+    console.log(chalk.green('>> Fastest is: ') + chalk.green.bold(this.filter('fastest').map('name')) + '\n');
 }
