@@ -3,12 +3,14 @@
         "lib": [
             "es2015"
         ],
-        "module": "es6",
+        "module": "umd",
         "moduleResolution": "node",
         "strictNullChecks": true,
-        "sourceMap": true,
+        "declaration": true,
         "importHelpers": true,
-        "target": "es3"
+        "target": "es5",
+        "declarationDir": "./dist",
+        "outDir": "./dist"
     },
     "include": [
         "src/**/*"
