@@ -9,10 +9,10 @@
     "formatter",
     "customization"
   ],
-  "main": "aevum.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "src",
-    "aevum.js"
+    "dist"
   ],
   "scripts": {
     "test": "mocha",
@@ -20,7 +20,7 @@
     "coverage": "nyc --reporter=lcov mocha",
     "benchmark": "node ./test/benchmarks.js",
     "prepublish": "npm run build",
-    "build": "webpack"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -32,9 +32,7 @@
     "mocha": "^3.5.3",
     "mocha-phantomjs": "^4.1.0",
     "nyc": "^11.3.0",
-    "ts-loader": "^3.1.1",
     "tslint": "^5.8.0",
-    "typescript": "^2.6.1",
-    "webpack": "^3.8.1"
+    "typescript": "^2.6.1"
   }
 }
