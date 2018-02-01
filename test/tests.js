@@ -257,6 +257,6 @@ describe('aevum.format', function () {
         const instance = new Aevum('(-)[-][d]');
         expect(instance.format(0.1234)).to.be.equal('0');
         expect(instance.format(1.1234)).to.be.equal('1');
-        epxect(instance.format(-1.1234)).to.be.equal('-1');
+        expect(instance.format(-1.1234)).to.be.equal('-1');
     });
 });
