@@ -29,7 +29,6 @@ before_script:
 script:
 - yarn run build
 - yarn run benchmark
-- yarn run test-browser
 - yarn run coverage
 
 after_script:

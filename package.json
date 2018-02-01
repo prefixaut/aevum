@@ -16,8 +16,7 @@
   ],
   "scripts": {
     "test": "mocha ./test/tests.js",
-    "test-browser": "mocha-phantomjs test/global.html",
-    "coverage": "nyc --reporter=lcov mocha",
+    "coverage": "nyc --reporter=lcov mocha ./test/tests.js",
     "benchmark": "node ./test/benchmarks.js",
     "prepublish": "npm run build",
     "build": "tsc"
@@ -31,7 +30,6 @@
     "chai": "^4.1.2",
     "chalk": "^2.3.0",
     "mocha": "^3.5.3",
-    "mocha-phantomjs": "^4.1.0",
     "nyc": "^11.3.0",
     "tslint": "^5.8.0",
     "typescript": "^2.7.1"
