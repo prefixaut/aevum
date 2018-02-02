@@ -3,19 +3,20 @@
 [![Travis](https://img.shields.io/travis/prefixaut/aevum.svg?style=flat-square)](https://travis-ci.org/prefixaut/aevum)
 [![npm Version](https://img.shields.io/npm/v/aevum.svg?style=flat-square)](https://www.npmjs.com/package/aevum)
 [![Bower](https://img.shields.io/bower/v/aevum.svg?style=flat-square)](https://github.com/prefixaut/aevum/releases)
-[![Code Climate](https://img.shields.io/codeclimate/coverage/github/prefixaut/aevum.svg?style=flat-square)](https://codeclimate.com/github/prefixaut/aevum)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/32437a5db5abfc7b21e8/test_coverage)](https://codeclimate.com/github/prefixaut/aevum/test_coverage)
 [![npm License](https://img.shields.io/npm/l/aevum.svg?style=flat-square)](https://spdx.org/licenses/MIT.html)
 
 is a highly customizable time (not date!) formatter. It's syntax is simple and allows you to do format times in a huge fashion!
 
 ## Installation
 
-### npm
+### npm/yarn
 
-The best way to install `aevum` is via npm like so
+The best way to install aevum is via npm/yarn:
 
 ```bash
-npm install aevum
+npm install aevum #NPM
+yarn add aevum # Yarn
 ```
 
 ### bower
@@ -36,28 +37,24 @@ git clone git@github.com:prefixaut/aevum.git
 
 ## Usage
 
-Aevum is getting compiled via [webpack](https://webpack.js.org) to make use of its [advanced UMD (Univeral Module Defintion)](https://webpack.js.org/configuration/output/#output-librarytarget) to make it possible to use in as many environments as possible.
-
 ```javascript
-// CommonJS Module
+// ES6 import
 import { Aevum } from 'aevum';
-// or in typescript also via 'aevum/src/aevum' for interfaces
 new Aevum('...');
+
+// CommonJS Module
+const aevum = require('aevum');
+new aevum.Aevum('...');
 
 // AMD Module
 define(['aevum'], function(aevum) {
     new aevum.Aevum('...');
 });
-
-// Global Variable
-new aevum.Aevum('...');
 ```
 
 Here some basic examples on how it can be used
 
 ```javascript
-import { Aevum } from 'aevum';
-
 const first = new Aevum('[hh]:[mm]:[ss].[ddd]');
 first.format(1); // -> "00:00:00.001"
 first.format({
@@ -86,11 +83,9 @@ second.format({
 }); // -> "1:23:45.999"
 ```
 
-The system is thought to make a format once and then apply some data to it. This prevents overhead of re-compiling the format every time when a new value is being passed in. You can think of it like a `RegExp`.
+The system is thought to make a format once and then apply some data to it. This prevents overhead of re-compiling the format every time when a new value is being passed in. You can think of it like a [`RegExp`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp).
 
 ```javascript
-import { Aevum } from 'aevum';
-
 // BAD
 let tmp = 0
 function update() {
@@ -188,15 +183,45 @@ Last but not least a little syntactic sugar. Currently there's only the hash (`#
 
 The constructor simply takes a string that contains the format. It'll be directly parsed and you get an Aevum-Object back.
 
-### format(content[, performPadding])
+### format(content[, performPadding[, safe]])
 
-The formatting is a method of the Aevum-Object and takes the `content` (`number` or `object`) and an optional `performPadding` (`boolean`, which defaults to `false`).
+**_Params_**:
 
-When `content` is a `number`, it'll be treated as timestamp (in milliseconds). You can pass in any valid number (Not `NaN` or `Infinite`) and it'll get parsed to an Time-Object.
+- `content` (`number`/`time`): A timestamp (`number`) in __milliseconds__ or a [time-object](#time-object).
+- `performPadding` (`boolean`): Flag to perform-padding on smaller time-types.
+- `safe` (`boolean`): Flag to accept the time-object without transformation.
 
-If you pass in an object, it'll try to get the individual parts of a time in the object by the following property-names in order:
+**_Description_**:
 
-- hours: `['hours', 'hour', 'h']`
-- minutes: `['minutes', 'minute', 'm']`
-- seconds: `['seconds', 'second', 's']`
-- milliseconds: `['milliseconds', 'millisecond', 'milli', 'd']`
+When the padding is turned on (`performPadding`), smaller time-types are getting converted to the biggest possible padding (See [the Padding](#padding) for more info). Complicated words, so here's an example:
+
+```javascript
+const instance = new Aevum('[h]:[m]:[s].[d]');
+instance.format({ milliseconds: 1 }, true); // "0:0:0.1"
+instance.format({ seconds: 1 }, true); // "0:0:1.000";
+instance.format({ minutes: 1 }, true); // "0:1:00.000";
+instance.format({ hours: 1 }, true); // "1:00:00.000";
+```
+
+The `safe` flag disables the lookup for [aliases](#time-object) and therefore requires you to put in the proper object and parameters. All type-checks are removed as well. This feature is for users which require a high efficency, for example when used in a timer.
+
+## Objects
+
+### Time-Object
+
+The time-object is an object-representation of a time _(duh)_.
+
+**_Fields_**:
+
+- `positive` (`boolean`): If the time is positive
+- `hours` (`number`): Amount of hours. Minimal value: `0`
+- `minutes` (`number`): Amount of minutes. Minimal value: `0`, Maximal value: `59`
+- `seconds` (`number`): Amount of seconds.  Minimal value: `0`, Maximal value: `59`
+- `milliseconds` (`number`): Amount of milliseconds.  Minimal value: `0`, Maximal value: `999`
+
+When passed in the [`format`-function](##formatcontent-performpadding-safe), following aliases can be used:
+
+- hours: `hour`, `h`
+- minutes: `minute`, `m`
+- seconds: `second`, `s`
+- milliseconds: `millisecond`, `milli`, `d`
