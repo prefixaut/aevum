@@ -6,17 +6,20 @@
 [![Test Coverage](https://api.codeclimate.com/v1/badges/32437a5db5abfc7b21e8/test_coverage)](https://codeclimate.com/github/prefixaut/aevum/test_coverage)
 [![npm License](https://img.shields.io/npm/l/aevum.svg?style=flat-square)](https://spdx.org/licenses/MIT.html)
 
-is a highly customizable time (not date!) formatter. It's syntax is simple and allows you to do format times in a huge fashion!
+is a highly customizable and fast time formatter. It's syntax is simple and yet feature-rich.
+It also doesn't need any dependencies which makes it super lightweight!
+
+---
 
 ## Installation
 
 ### npm/yarn
 
-The best way to install is via [npm](https://npmjs.org)/[yarn](https://yarnpkg.com/):
+The easier way to install is to add `aevum` as a dependency to your project it via [yarn](https://yarnpkg.com/) or [npm](https://npmjs.org):
 
 ```bash
-npm install aevum # NPM
-yarn add aevum # Yarn
+yarn add aevum
+npm install aevum
 ```
 
 ### bower
@@ -34,6 +37,8 @@ Cloning this repository:
 ```bash
 git clone git@github.com:prefixaut/aevum.git
 ```
+
+---
 
 ## Usage
 
@@ -104,6 +109,8 @@ function update() {
 }
 
 ```
+
+---
 
 ## Syntax
 
@@ -177,6 +184,8 @@ Last but not least a little syntactic sugar. Currently there's only the hash (`#
 
 `(h7)[#]` is the same as `(h7)[[h7]]`
 
+---
+
 ## Functions
 
 ### constructor(formatString)
@@ -205,6 +214,8 @@ instance.format({ hours: 1 }, true); // "1:00:00.000";
 
 The `safe` flag disables the lookup for [aliases](#time-object) and type checks.
 Therefore it requires you to put in the proper object and parameters. This feature is useful in a very performance depended application, for example in a timer.
+
+---
 
 ## Objects
 
