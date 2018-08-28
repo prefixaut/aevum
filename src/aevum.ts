@@ -1,4 +1,4 @@
-import { Token, tokenize } from './tokenizer';
+import { Token, TokenType, tokenize } from './tokenizer';
 
 export interface Time {
     positive: boolean;
@@ -17,11 +17,10 @@ export const TimeTypes: { [key: string]: number } = {
     h: -1,
     m: 2,
     s: 2,
-    d: 3,
+    d: 3
 };
 
 export class Aevum {
-
     /**
      * Parsed tokens
      */
@@ -39,9 +38,7 @@ export class Aevum {
      * @param formatString Format String string according to the Documentation.
      * @see https://github.com/prefixaut/aevum
      */
-    constructor(
-        private formatString: string,
-    ) {
+    constructor(formatString: string) {
         this.tokens = tokenize(formatString);
         this.compiled = this.shake(this.tokens);
     }
@@ -80,12 +77,12 @@ export class Aevum {
             content = content - (content % 1);
 
             // Parse an timing object from the number
-            time =  {
+            time = {
                 positive,
                 hours: (content / 3600000) | 0,
-                minutes: ((content / 60000) % 60) | 0,
-                seconds: ((content / 1000) % 60) | 0,
-                milliseconds: (content % 1000) | 0,
+                minutes: (content / 60000) % 60 | 0,
+                seconds: (content / 1000) % 60 | 0,
+                milliseconds: content % 1000 | 0
             };
         } else if (typeof content === 'object') {
             if (safe) {
@@ -100,14 +97,14 @@ export class Aevum {
                 }
 
                 const out = {
-                    positive,
+                    positive
                 };
 
                 const map = {
                     hours: ['hours', 'hour', 'h'],
                     minutes: ['minutes', 'minute', 'm'],
                     seconds: ['seconds', 'second', 's'],
-                    milliseconds: ['milliseconds', 'millisecond', 'milli', 'd'],
+                    milliseconds: ['milliseconds', 'millisecond', 'milli', 'd']
                 };
 
                 const keys = Object.keys(map); // tslint:disable-line
@@ -122,7 +119,7 @@ export class Aevum {
                         if (isNaN(value) || !isFinite(value)) {
                             continue;
                         }
-                        out[keys[i]] = value - value % 1;
+                        out[keys[i]] = value - (value % 1);
                     }
                 }
 
@@ -140,7 +137,7 @@ export class Aevum {
         // The content we build together
         let build = '';
         // The shook array that is being used.
-        let arr: Array<string | Token> = [];
+        let arr: (string | Token)[] = [];
         // Keys for both the time and compiled object
         const keys = ['hours', 'minutes', 'seconds', 'milliseconds'];
         // Flag if `arr` has changed
@@ -174,14 +171,17 @@ export class Aevum {
         }
 
         // Handle special type '?'
-        if (part.type === '?') {
-            return (time.positive) ? '+' : '-';
+        if (part.type === TokenType.RELATIVE) {
+            return time.positive ? TokenType.POSITIVE : TokenType.NEGATIVE;
         }
 
         // Handle special type '+' and '-'
-        if (part.type === '-' || part.type === '+') {
+        if (part.type === TokenType.NEGATIVE || part.type === TokenType.POSITIVE) {
             let build = '';
-            if ((part.type === '-' && !time.positive) || (part.type === '+' && time.positive)) {
+            if (
+                (part.type === TokenType.NEGATIVE && !time.positive) ||
+                (part.type === TokenType.POSITIVE && time.positive)
+            ) {
                 if (part.format != null) {
                     for (let i = 0; i < part.format.length; i++) {
                         build += this.renderPart(part.format[i], time, padding);
@@ -195,12 +195,12 @@ export class Aevum {
         return this.renderTimePart(part.type, part.length, time, padding);
     }
 
-    private shake(tokens: Array<string | Token>) {
-        const hours = new Array<string | Token>();
-        const minutes = new Array<string | Token>();
-        const seconds = new Array<string | Token>();
-        const milliseconds = new Array<string | Token>();
-        const all = new Array<string | Token>();
+    private shake(tokens: (string | Token)[]) {
+        const hours: (string | Token)[] = [];
+        const minutes: (string | Token)[] = [];
+        const seconds: (string | Token)[] = [];
+        const milliseconds: (string | Token)[] = [];
+        const all: (string | Token)[] = [];
 
         const length = tokens.length;
         for (let i = 0; i < length; i++) {
@@ -216,20 +216,20 @@ export class Aevum {
                 continue;
             }
 
-            if (t.type === '-' || t.type === '+') {
+            if (t.type === TokenType.NEGATIVE || t.type === TokenType.POSITIVE) {
                 this.pushIntoAll(t, hours, minutes, seconds, milliseconds);
                 continue;
             }
 
-            const arrays = new Array<Array<string | Token>>();
+            const arrays: (string | Token)[][] = [];
             switch (t.type) {
-                case 'd':
+                case TokenType.MILLISECOND:
                     arrays.push(milliseconds);
-                case 's':
+                case TokenType.SECOND:
                     arrays.push(seconds);
-                case 'm':
+                case TokenType.MINUTE:
                     arrays.push(minutes);
-                case 'h':
+                case TokenType.HOUR:
                     arrays.push(hours);
             }
 
@@ -245,12 +245,12 @@ export class Aevum {
             minutes,
             seconds,
             milliseconds,
-            all,
+            all
         };
     }
 
-    private pushIntoAll(value: string | Token, ...arrays: Array<Array<string | Token>>) {
-        arrays.forEach((arr) => {
+    private pushIntoAll(value: string | Token, ...arrays: (string | Token)[][]) {
+        arrays.forEach(arr => {
             arr.push(value);
         });
     }
@@ -259,16 +259,16 @@ export class Aevum {
         let value = 0;
 
         switch (type) {
-            case 'h':
+            case TokenType.HOUR:
                 value = time.hours || 0;
                 break;
-            case 'm':
+            case TokenType.MINUTE:
                 value = time.minutes || 0;
                 break;
-            case 's':
+            case TokenType.SECOND:
                 value = time.seconds || 0;
                 break;
-            case 'd':
+            case TokenType.MILLISECOND:
                 value = time.milliseconds || 0;
                 break;
         }
@@ -276,15 +276,15 @@ export class Aevum {
         if (padding) {
             let tmp = 0;
             switch (type) {
-                case 'd':
+                case TokenType.MILLISECOND:
                     if (tmp === 0) {
                         tmp = time.seconds || tmp;
                     }
-                case 's':
+                case TokenType.SECOND:
                     if (tmp === 0) {
                         tmp = time.minutes || tmp;
                     }
-                case 'm':
+                case TokenType.MINUTE:
                     if (tmp === 0) {
                         tmp = time.hours || tmp;
                     }
