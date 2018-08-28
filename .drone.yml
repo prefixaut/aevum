@@ -1,0 +1,15 @@
+pipeline:
+  build:
+    image: node
+    pull: true
+    commands:
+      - yarn install
+      - yarn build
+      - yarn benchmark
+  
+  github_release:
+    image: plugins/github-release
+    files: dist/*
+    when:
+      branch: master
+      event: tag
