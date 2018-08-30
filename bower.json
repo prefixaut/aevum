@@ -1,7 +1,7 @@
 {
   "name": "aevum",
   "description": "Highly customizable time formatter",
-  "main": "aevum.js",
+  "main": "dist/index.js",
   "authors": [
     "PreFiXAUT <me@prefixaut.net>"
   ],
