@@ -1,11 +1,22 @@
 import { Token, TokenType, tokenize } from './tokenizer';
 
+/**
+ * An interface which represents the Schema of how the time is
+ * parsed or consumed by aevum in order to format it correctly.
+ */
 export interface Time {
     positive: boolean;
     hours: number;
     minutes: number;
     seconds: number;
     milliseconds: number;
+}
+
+export interface FormattingOptions {
+    /** If the time has a bigger unit, it'll automatically apply padding to the units below it */
+    padding?: boolean;
+    /** If the content is safe to get without transformations */
+    safe?: boolean;
 }
 
 /**
@@ -20,6 +31,11 @@ export const TimeTypes: { [key: string]: number } = {
     d: 3
 };
 
+/**
+ * Class which represents an Aevum formatter.
+ * On initialization it's parsing the provided format which can then be
+ * used to format a time.
+ */
 export class Aevum {
     /**
      * Parsed tokens
@@ -48,91 +64,10 @@ export class Aevum {
      * initialized.
      *
      * @param content Any Number (not NaN/Infinite) or an Object which represents an existing time-object.
-     * @param performPadding If the time has a bigger unit, it'll automatically apply padding to the units below it.
-     * @param safe If the content is safe to get without transformations.
+     * @param options Options which should be applied when formatting the content
      */
-    public format(content: number | object, performPadding: boolean = false, safe: boolean = false): string {
-        let time: Time | null = null;
-        let positive = true;
-
-        if (typeof content === 'undefined' || content === null) {
-            throw new TypeError('The time may not be null or undefined!');
-        } else if (typeof content === 'number') {
-            if (!safe) {
-                if (isNaN(content)) {
-                    throw new TypeError('The number may not be NaN!');
-                }
-
-                if (!isFinite(content)) {
-                    throw new TypeError('The number may not be Infinite!');
-                }
-            }
-
-            if (content < 0) {
-                positive = false;
-                content = content * -1;
-            }
-
-            // Remove floating-points
-            content = content - (content % 1);
-
-            // Parse an timing object from the number
-            time = {
-                positive,
-                hours: (content / 3600000) | 0,
-                minutes: (content / 60000) % 60 | 0,
-                seconds: (content / 1000) % 60 | 0,
-                milliseconds: content % 1000 | 0
-            };
-        } else if (typeof content === 'object') {
-            if (safe) {
-                time = content as Time;
-            } else {
-                if (Array.isArray(content)) {
-                    throw new TypeError('The time may not be an array!');
-                }
-
-                if ('positive' in content) {
-                    positive = !!(content as any).positive;
-                }
-
-                const out = {
-                    positive
-                };
-
-                const map = {
-                    hours: ['hours', 'hour', 'h'],
-                    minutes: ['minutes', 'minute', 'm'],
-                    seconds: ['seconds', 'second', 's'],
-                    milliseconds: ['milliseconds', 'millisecond', 'milli', 'd']
-                };
-
-                const keys = Object.keys(map); // tslint:disable-line
-                for (let i = 0; i < keys.length; i++) {
-                    const obj = map[keys[i]];
-
-                    for (let k = 0; k < obj.length; k++) {
-                        if (!content.hasOwnProperty(obj[k])) {
-                            continue;
-                        }
-                        const value = content[obj[k]];
-                        if (isNaN(value) || !isFinite(value)) {
-                            continue;
-                        }
-                        out[keys[i]] = value - (value % 1);
-                    }
-                }
-
-                time = out as Time;
-            }
-        } else {
-            throw new TypeError(`Invalid type "${typeof content}"!`);
-        }
-
-        // Never happens
-        if (time == null) {
-            throw new Error();
-        }
+    public format(content: number | object, options: FormattingOptions = { padding: false, safe: false }): string {
+        const time = this.toTime(content, !!options.safe);
 
         // The content we build together
         let build = '';
@@ -159,10 +94,88 @@ export class Aevum {
 
         // Rendering all parts of the array and putting it into the build-string.
         for (let i = 0; i < arr.length; i++) {
-            build += this.renderPart(arr[i], time, performPadding);
+            build += this.renderPart(arr[i], time, !!options.padding);
         }
 
         return build;
+    }
+
+    private toTime(content: number | object, safe: boolean): Time {
+        let positive = true;
+
+        const type = typeof content;
+        if (type === 'undefined' || content === null) {
+            throw new TypeError('The time may not be null or undefined!');
+        }
+        if (type !== 'number' && type !== 'object') {
+            throw new TypeError(`Invalid type "${type}"!`);
+        }
+
+        if (typeof content === 'number') {
+            if (!safe) {
+                if (isNaN(content) || !isFinite(content)) {
+                    throw new TypeError('The number may not be NaN/Infinite!');
+                }
+            }
+
+            if (content < 0) {
+                positive = false;
+                content = content * -1;
+            }
+
+            // Remove floating-points
+            content = content - (content % 1);
+
+            // Parse an timing object from the number
+            return {
+                positive,
+                hours: (content / 3600000) | 0,
+                minutes: (content / 60000) % 60 | 0,
+                seconds: (content / 1000) % 60 | 0,
+                milliseconds: content % 1000 | 0
+            };
+        }
+
+        if (safe) {
+            return content as Time;
+        }
+
+        if (Array.isArray(content)) {
+            throw new TypeError('The time may not be an array!');
+        }
+
+        if ('positive' in content) {
+            positive = !!(content as any).positive;
+        }
+
+        const out = {
+            positive
+        };
+
+        const map = {
+            hours: ['hours', 'hour', 'h'],
+            minutes: ['minutes', 'minute', 'm'],
+            seconds: ['seconds', 'second', 's'],
+            milliseconds: ['milliseconds', 'millisecond', 'milli', 'd']
+        };
+
+        const keys = Object.keys(map); // tslint:disable-line
+        for (let i = 0; i < keys.length; i++) {
+            const obj = map[keys[i]];
+
+            for (let k = 0; k < obj.length; k++) {
+                if (!content.hasOwnProperty(obj[k])) {
+                    continue;
+                }
+                const value = content[obj[k]];
+                if (isNaN(value) || !isFinite(value)) {
+                    continue;
+                }
+                out[keys[i]] = value - (value % 1);
+            }
+        }
+
+        return out as Time;
     }
 
     private renderPart(part: string | Token, time: Time, padding: boolean): string {
@@ -179,8 +192,10 @@ export class Aevum {
         if (part.type === TokenType.NEGATIVE || part.type === TokenType.POSITIVE) {
             let build = '';
             if (
-                (part.type === TokenType.NEGATIVE && !time.positive) ||
-                (part.type === TokenType.POSITIVE && time.positive)
+                !part.optional ||
+                (part.optional &&
+                    ((part.type === TokenType.NEGATIVE && !time.positive) ||
+                        (part.type === TokenType.POSITIVE && time.positive)))
             ) {
                 if (part.format != null) {
                     for (let i = 0; i < part.format.length; i++) {
@@ -217,7 +232,9 @@ export class Aevum {
             }
 
             if (t.type === TokenType.NEGATIVE || t.type === TokenType.POSITIVE) {
-                this.pushIntoAll(t, hours, minutes, seconds, milliseconds);
+                (t.format as (string|Token)[]).forEach(element => {
+                    this.pushIntoAll(element, hours, minutes, seconds, milliseconds);
+                });
                 continue;
             }
 

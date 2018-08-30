@@ -18,28 +18,35 @@ export interface Token {
 }
 
 enum TokenizerState {
+    /** When in normal text */
     STRING,
-    ESCAPED,
-    IN_OPTIONAL,
-    REQUIRE_FORMAT,
+    /** When the previous character was a backslash to escape the comming one */
+    ESCAPE,
+    /** If it's inside a format */
     IN_FORMAT,
-    IN_NESTED
+    /** If it's inside an optional type-definition */
+    IN_OPTIONAL_TYPE,
+    /** If it's inside an optional format block */
+    IN_OPTIONAL_FORMAT
 }
 
 enum Errors {
     // Syntax errors
-    CLOSED_OPTIONAL = 'Invalid Syntax on position {pos}! Closed optional defintion without setting a type!',
-    EMPTY_FORMAT_BLOCK = 'Invalid Syntax on position ${pos}! An format-block may not be empty!',
-    DEEP_NESTED = 'Invalid Syntax on position {pos}! You cannot nest multiple levels!',
+    EMPTY_FORMAT = 'Invalid Syntax on position ${pos}! An format-block may not be empty!',
+    NESTED_OPTIONAL = 'Invalid Syntax on position {pos}! You cannot nest optional blocks!',
+
+    // Type erros
+    EMPTY_TYPE = 'Invalid Type-Defintion on position {pos}! The format/optional block does not have a type!',
+    MIXED_TYPE = 'Invalid Type-Defintion on position {pos}! You may not mix types!',
+    UNKNOWN_TYPE = 'Invalid Type-Defintion on position {pos}! The type "{type}" does not exist!',
+    TYPE_LENGTH = 'Invalid Type-Definition on position {pos}! The given length is bigger than allowed! Set length: {length}, maximal length: {max}',
 
     // Validation errors
-    MIXED_LENGTH = 'Invalid Type-Definition on position {pos}! You may not mix the length with something else!',
-    MIXED_TYPE = 'Invalid Type-Defintion on position {pos}! You may not mix types!',
-    LENGTH_OVERFLOW = 'Invalid Type-Definition on position {position}! The given length is bigger than allowed! Length: {length}, Max: {max}',
-    HASH_COMBINE = 'The #-Type can not be combined with the Type "{type}" on position {pos}!',
-    UNEXPECTED_CONTENT = 'Unexpected "{seq}"! Expected an format assignment at position: ${pos}!',
-    UNEXPECTED_EOF = 'Unexpected end of format!',
-    UNKNOWN_TYPE = 'Unknown Type "{type}" on position {pos}!'
+    INVALID_TYPE_IN_FORMAT = 'The Type "{type}" on position {pos} can not be used inside a normal format block!',
+    INVALID_TYPE_IN_OPTIONAL = 'The Type "{type}" on position {pos} can not be used inside an optional format block!',
+    HASH_COMBINE = 'The #-shortcut can not be combined with the Type "{type}" on position {pos}!',
+    UNEXPECTED_CONTENT_IN_TYPE = 'Unexpected "{content}" on position {pos}! Expected a continuation of type-definition',
+    UNEXPECTED_EOF = 'Unexpected end of format!'
 }
 
 const ESCAPE = '\\';
@@ -47,9 +54,8 @@ const FORMAT_START = '[';
 const FORMAT_END = ']';
 const OPTIONAL_START = '(';
 const OPTIONAL_END = ')';
+const OPTIONAL_DEF_END = ':';
 
-/** Regex for numbers */
-const NUMBER_REGEX = /^\d+$/;
 /** Regex used to replace hashes with the format */
 const HASH_REGEX = /([^\\])(#)/;
 
@@ -59,11 +65,10 @@ const HASH_REGEX = /([^\\])(#)/;
  * A Token contains the data to render it properly.
  *
  * @param format A format-string
- * @param index The index from where the tokenizing should start from. Utilized by self-invoked calls for nested formats.
+ * @param startIndex The index from where the tokenizing should start from. Utilized by self-invoked calls for nested formats.
  * @throws `SyntaxError` when the format-string could not be parsed or is invalid
  */
-export function tokenize(format: string, index = 0): (string | Token)[] {
-
+export function tokenize(format: string, startIndex = 0): (string | Token)[] {
     /** Length of the format-string */
     const formatLength = format.length;
     /** The compiled array of items */
@@ -73,35 +78,26 @@ export function tokenize(format: string, index = 0): (string | Token)[] {
     let previousState: TokenizerState = TokenizerState.STRING;
     let currentState: TokenizerState = TokenizerState.STRING;
 
-    /** The nested-format content */
-    let nestedBuild = '';
     /** The current string build */
     let build = '';
 
     /** Type of the current format that is being processed */
-    let tokenType: TokenType = '' as TokenType;
+    let tokenType: null | TokenType = '' as TokenType;
     /** Length of the Type */
     let tokenLength: number = 0;
     /** If the currently processed token is optional or not */
     let isTokenOptional: boolean = false;
 
-    for (let i = 0; i < formatLength; i++) {
-        const c = format.charAt(i);
+    // Iterate over each single character of the format string and determine
+    // how to handle it according to the current state.
+    for (let currentIndex = 0; currentIndex < formatLength; currentIndex++) {
+        const c = format.charAt(currentIndex);
 
         switch (currentState) {
-            case TokenizerState.REQUIRE_FORMAT:
-                if (c !== FORMAT_START) {
-                    throw new SyntaxError(formatError(Errors.UNEXPECTED_CONTENT, { pos: index + i, seq: c }));
-                }
-                currentState = TokenizerState.IN_FORMAT;
-                break;
-
-            case TokenizerState.ESCAPED:
-                // Adding the backslash/escape character again, since the content
-                // of an State.IN_FORMAT will be tokenized again which causes the
-                // content not to be escaped properly, as the escape doesn't
-                // happen in the second round of the tokenizing
-                if (previousState as any === TokenizerState.IN_FORMAT) {
+            case TokenizerState.ESCAPE:
+                // Add the escape as well when in an optional format, since the build is getting
+                // tokenized a second time.
+                if ((previousState as any) === TokenizerState.IN_OPTIONAL_FORMAT) {
                     build += ESCAPE;
                 }
                 currentState = previousState;
@@ -111,55 +107,31 @@ export function tokenize(format: string, index = 0): (string | Token)[] {
             case TokenizerState.STRING:
                 if (c === ESCAPE) {
                     previousState = currentState;
-                    currentState = TokenizerState.ESCAPED;
+                    currentState = TokenizerState.ESCAPE;
                     break;
                 }
 
-                if (c === OPTIONAL_START) {
-                    currentState = TokenizerState.IN_OPTIONAL;
+                if (c === OPTIONAL_START || c === FORMAT_START) {
+                    // Add the current content to the tokens
                     if (build !== '') {
                         tokens.push(build);
                     }
+                    // Reset the content to store the oncoming type
                     build = '';
-                    break;
-                }
 
-                if (c === FORMAT_START) {
-                    currentState = TokenizerState.IN_FORMAT;
-                    if (build !== '') {
-                        tokens.push(build);
-                    }
-                    build = '';
-                    break;
-                }
-
-                build += c;
-                break;
-
-            case TokenizerState.IN_OPTIONAL:
-                if (c === OPTIONAL_END) {
-                    if (build.length === 0) {
-                        throw new SyntaxError(formatError(Errors.CLOSED_OPTIONAL, { pos: index + i }));
-                    }
-
-                    if (build === TokenType.POSITIVE || build === TokenType.NEGATIVE) {
-                        tokenLength = 1;
+                    // Update the state
+                    if (c === OPTIONAL_START) {
+                        if (startIndex > 0) {
+                            throw new SyntaxError(
+                                formatError(Errors.NESTED_OPTIONAL, { pos: startIndex + currentIndex })
+                            );
+                        }
+                        currentState = TokenizerState.IN_OPTIONAL_TYPE;
+                        isTokenOptional = true;
                     } else {
-                        if (!TimeTypes.hasOwnProperty(build[0])) {
-                            throw new SyntaxError(formatError(Errors.UNKNOWN_TYPE, { pos: index + 1, type: build[0] }));
-                        }
-
-                        if (build.length > 1) {
-                            tokenLength = verifyType(build.toLowerCase(), index + i);
-                        } else {
-                            tokenLength = 1;
-                        }
+                        currentState = TokenizerState.IN_FORMAT;
+                        isTokenOptional = false;
                     }
-
-                    tokenType = build[0] as TokenType;
-                    build = '';
-                    currentState = TokenizerState.REQUIRE_FORMAT;
-                    isTokenOptional = true;
                     break;
                 }
 
@@ -167,98 +139,90 @@ export function tokenize(format: string, index = 0): (string | Token)[] {
                 break;
 
             case TokenizerState.IN_FORMAT:
-                if (c === ESCAPE) {
-                    previousState = currentState;
-                    currentState = TokenizerState.ESCAPED;
-                    break;
-                }
-
-                if (c === FORMAT_START) {
-                    currentState = TokenizerState.IN_NESTED;
-                    break;
-                }
-
-                if (c === FORMAT_END) {
-                    if (!isTokenOptional) {
-                        if (build.length === 0) {
-                            throw new SyntaxError(formatError(Errors.EMPTY_FORMAT_BLOCK, { pos: index + i }));
-                        }
-
-                        if (build === TokenType.RELATIVE) {
-                            tokens.push({
-                                type: TokenType.RELATIVE,
-                                length: 1,
-                                optional: false
-                            });
-                            build = '';
-                            isTokenOptional = false;
-                            currentState = TokenizerState.STRING;
-                            break;
-                        }
-
-                        if (!TimeTypes.hasOwnProperty(build[0])) {
-                            throw new SyntaxError(formatError(Errors.UNKNOWN_TYPE, { pos: index + i, type: build[0] }));
-                        }
-
-                        if (build.length > 1) {
-                            tokenLength = verifyType(build.toLowerCase(), index + i);
-                        } else {
-                            tokenLength = 1;
-                        }
-
-                        tokenType = build[0] as TokenType;
-                    }
-
-                    const token: Token = {
-                        type: tokenType,
-                        length: tokenLength,
-                        optional: isTokenOptional
-                    };
-
-                    if (isTokenOptional) {
-                        if (HASH_REGEX.test(build)) {
-                            if (tokenType === TokenType.POSITIVE || tokenType === TokenType.NEGATIVE) {
-                                throw new SyntaxError(formatError(Errors.HASH_COMBINE, { pos: index + i, tokenType }));
-                            }
-                            build = build.replace(HASH_REGEX, `$1[${tokenType}${tokenLength}]`);
-                        }
-                        token.format = tokenize(build, i - build.length - 4);
-                    }
-
-                    tokens.push(token);
+            case TokenizerState.IN_OPTIONAL_TYPE:
+                if (
+                    currentState === TokenizerState.IN_FORMAT
+                        ? c === FORMAT_END
+                        : c === OPTIONAL_END || c === OPTIONAL_DEF_END
+                ) {
+                    const typeData = verifyType(build, startIndex + currentIndex, isTokenOptional);
                     build = '';
-                    currentState = TokenizerState.STRING;
-                    isTokenOptional = false;
+
+                    if (c === OPTIONAL_END || c === FORMAT_END) {
+                        const token: Token = {
+                            ...typeData,
+                            optional: isTokenOptional
+                        };
+
+                        switch (token.type) {
+                            case TokenType.POSITIVE:
+                            case TokenType.NEGATIVE:
+                                if (!isTokenOptional) {
+                                    throw new SyntaxError(formatError(Errors.INVALID_TYPE_IN_FORMAT, { pos: startIndex + currentIndex, type: token.type }));
+                                }
+                                token.format = [token.type];
+                                break;
+                            case TokenType.RELATIVE:
+                                if (isTokenOptional) {
+                                    throw new SyntaxError(formatError(Errors.INVALID_TYPE_IN_OPTIONAL, { pos: startIndex + currentIndex, type: token.type }));
+                                }
+                                break;
+                            default:
+                                if (isTokenOptional) {
+                                    token.format = [{ ...token, optional: false }];
+                                }
+                                break;
+                        }
+
+                        currentState = TokenizerState.STRING;
+                        tokens.push(token);
+                        break;
+                    }
+
+                    currentState = TokenizerState.IN_OPTIONAL_FORMAT;
+                    tokenType = typeData.type;
+                    tokenLength = typeData.length;
                     break;
                 }
 
                 build += c;
                 break;
 
-            case TokenizerState.IN_NESTED:
-                if (c === FORMAT_START) {
-                    throw new SyntaxError();
-                }
-                if (c === FORMAT_END) {
-                    if (nestedBuild.length === 0) {
-                        throw new SyntaxError(formatError(Errors.EMPTY_FORMAT_BLOCK, { pos: index + i }));
-                    }
-
-                    if (!TimeTypes.hasOwnProperty(nestedBuild[0])) {
-                        throw new SyntaxError(
-                            formatError(Errors.UNKNOWN_TYPE, { pos: index + i, type: nestedBuild[0] })
-                        );
-                    }
-
-                    verifyType(nestedBuild.toLowerCase(), index + i);
-
-                    build += `[${nestedBuild}]`;
-                    nestedBuild = '';
-                    currentState = TokenizerState.IN_FORMAT;
+            case TokenizerState.IN_OPTIONAL_FORMAT:
+                if (c === ESCAPE) {
+                    previousState = currentState;
+                    currentState = TokenizerState.ESCAPE;
                     break;
                 }
 
-                nestedBuild += c;
+                if (c === OPTIONAL_END) {
+                    const newTokenizePos = currentIndex - build.length;
+                    if (HASH_REGEX.test(build)) {
+                        if (
+                            tokenType === TokenType.POSITIVE ||
+                            tokenType === TokenType.NEGATIVE ||
+                            tokenType === TokenType.RELATIVE
+                        ) {
+                            throw new SyntaxError(
+                                formatError(Errors.HASH_COMBINE, { pos: startIndex + currentIndex, tokenType })
+                            );
+                        }
+                        build = build.replace(HASH_REGEX, `$1[${tokenType.repeat(tokenLength)}]`);
+                    }
+
+                    tokens.push({
+                        type: tokenType,
+                        length: tokenLength,
+                        optional: true,
+                        format: tokenize(build, newTokenizePos)
+                    });
+
+                    build = '';
+                    currentState = TokenizerState.STRING;
+                    break;
+                }
+
+                build += c;
                 break;
         }
     }
@@ -282,39 +246,58 @@ function formatError(errorTemplate: string, replace: { pos: number; [other: stri
     return str;
 }
 
-function verifyType(input: string, position: number): number {
-    const type = input[0];
-    let isNumber = false;
-    let build = '';
+function verifyType(input: string, position: number, optional: boolean): { type: TokenType; length: number } {
+    input = input.trim();
+    if (input.length === 0) {
+        throw new SyntaxError(formatError(Errors.EMPTY_TYPE, { pos: position }));
+    }
+
+    const type = input.trim()[0];
     let length = 1;
 
+    switch (type) {
+        case TokenType.NEGATIVE:
+        case TokenType.POSITIVE:
+        case TokenType.RELATIVE:
+            return {
+                type,
+                length: 1
+            };
+        case TokenType.HOUR:
+        case TokenType.MINUTE:
+        case TokenType.SECOND:
+        case TokenType.MILLISECOND:
+            break;
+        default:
+            throw new SyntaxError(formatError(Errors.UNKNOWN_TYPE, { pos: position, type }));
+    }
+
+    let errContent = '';
+    let errPos = -1;
+
+    // Calculate the provided length
     for (let i = 1; i < input.length; i++) {
         const c = input[i];
 
-        if (i === 1) {
-            isNumber = NUMBER_REGEX.test(c);
-        }
-
-        if (isNumber) {
-            if (!NUMBER_REGEX.test(c)) {
-                throw new SyntaxError(formatError(Errors.MIXED_LENGTH, { pos: position + i }));
+        if (c !== type) {
+            errContent += c;
+            if (errPos === -1) {
+                errPos = i;
             }
-            build += c;
-        } else if (c !== type) {
-            throw new SyntaxError(formatError(Errors.MIXED_TYPE, { pos: position + i }));
+            continue;
         }
 
         length++;
     }
 
-    if (isNumber) {
-        length = parseInt(build, 10);
+    if (errPos > -1) {
+        throw new SyntaxError(formatError(Errors.MIXED_TYPE, { pos: position + errPos, content: errContent }));
     }
 
     const max = TimeTypes[type];
     if (max > 0 && length > max) {
-        throw new SyntaxError(formatError(Errors.LENGTH_OVERFLOW, { pos: position, length, max }));
+        throw new SyntaxError(formatError(Errors.TYPE_LENGTH, { pos: position, length, max }));
     }
 
-    return length;
+    return { type, length };
 }
