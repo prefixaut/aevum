@@ -158,13 +158,23 @@ export function tokenize(format: string, startIndex = 0): (string | Token)[] {
                             case TokenType.POSITIVE:
                             case TokenType.NEGATIVE:
                                 if (!isTokenOptional) {
-                                    throw new SyntaxError(formatError(Errors.INVALID_TYPE_IN_FORMAT, { pos: startIndex + currentIndex, type: token.type }));
+                                    throw new SyntaxError(
+                                        formatError(Errors.INVALID_TYPE_IN_FORMAT, {
+                                            pos: startIndex + currentIndex,
+                                            type: token.type
+                                        })
+                                    );
                                 }
                                 token.format = [token.type];
                                 break;
                             case TokenType.RELATIVE:
                                 if (isTokenOptional) {
-                                    throw new SyntaxError(formatError(Errors.INVALID_TYPE_IN_OPTIONAL, { pos: startIndex + currentIndex, type: token.type }));
+                                    throw new SyntaxError(
+                                        formatError(Errors.INVALID_TYPE_IN_OPTIONAL, {
+                                            pos: startIndex + currentIndex,
+                                            type: token.type
+                                        })
+                                    );
                                 }
                                 break;
                             default:
@@ -259,17 +269,13 @@ function verifyType(input: string, position: number, optional: boolean): { type:
         case TokenType.NEGATIVE:
         case TokenType.POSITIVE:
         case TokenType.RELATIVE:
-            return {
-                type,
-                length: 1
-            };
         case TokenType.HOUR:
         case TokenType.MINUTE:
         case TokenType.SECOND:
         case TokenType.MILLISECOND:
             break;
         default:
-            throw new SyntaxError(formatError(Errors.UNKNOWN_TYPE, { pos: position, type }));
+            throw new SyntaxError(formatError(Errors.UNKNOWN_TYPE, { pos: position - input.length, type }));
     }
 
     let errContent = '';
@@ -291,12 +297,22 @@ function verifyType(input: string, position: number, optional: boolean): { type:
     }
 
     if (errPos > -1) {
-        throw new SyntaxError(formatError(Errors.MIXED_TYPE, { pos: position + errPos, content: errContent }));
+        throw new SyntaxError(
+            formatError(Errors.MIXED_TYPE, { pos: position - input.length + errPos, content: errContent })
+        );
     }
 
-    const max = TimeTypes[type];
+    let max: number;
+    switch (type) {
+        case TokenType.NEGATIVE:
+        case TokenType.POSITIVE:
+        case TokenType.RELATIVE:
+            max = 1;
+        default:
+            max = TimeTypes[type];
+    }
     if (max > 0 && length > max) {
-        throw new SyntaxError(formatError(Errors.TYPE_LENGTH, { pos: position, length, max }));
+        throw new SyntaxError(formatError(Errors.TYPE_LENGTH, { pos: position - input.length, length, max }));
     }
 
     return { type, length };
