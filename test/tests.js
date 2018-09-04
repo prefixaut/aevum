@@ -6,58 +6,51 @@ if (typeof require === 'function') {
     var Aevum = window.aevum.Aevum;
 }
 
-describe('aevum constructor', function () {
-    it('should be a function', function () {
+describe('aevum constructor', function() {
+    it('should be a function', function() {
         expect(Aevum).to.be.a('function');
     });
 });
 
-describe('aevum.format', function () {
-    
-    it('should compile', function () {
+describe('aevum.format', function() {
+    it('should compile', function() {
         [
             '[d]',
             '[dd]',
             '[ddd]',
-            '[d1]',
-            '[d2]',
-            '[d3]',
             '[s]',
             '[ss]',
-            '[s1]',
-            '[s2]',
             '[m]',
             '[mm]',
-            '[m1]',
-            '[m2]',
             '[h]',
             '[hh]',
-            '[h1]',
-            '[h2]',
-            '[h10000]',
             'hello',
-            '(d)[content]',
-            '(d)[other[mm]content]',
-            'hello\\[dude\\]',
-            '(d)[hello\\[dude\\]]',
-            'something(d)[here]',
+            '(d:content)',
+            '(d:other[mm]content)',
+            'hello\\[dude]',
+            '(d:hello\\[dude])',
+            '(+)',
+            '(-)',
+            '[?]',
+            'something(d:here)'
         ].forEach(function(format) {
-            expect(function () {
+            expect(function() {
                 new Aevum(format);
             }).to.not.throw(SyntaxError);
         });
     });
 
-    it('should throw syntax errors', function () {
+    it('should throw syntax errors', function() {
         [
             '(should-fail)',
-            '(dd)',
-            '(h\\hh)[test]',
-            '(dd)[',
-            '(dd)hello',
+            '(db)',
+            '(h\\hh:test)',
+            '(dd',
+            '(dd:',
+            '(:cool)',
             'there()is content',
             '(ab)',
-            '(mm)[[[ss]]]',
+            '(mm:[[ss]])',
             '(mm)[[invalid]]',
             '(mm)[[test]',
             '[dddd]',
@@ -86,7 +79,13 @@ describe('aevum.format', function () {
             '[y]',
             '[z]',
             '[]',
-            '(d)[bla[]]',
+            '[+]',
+            '[-]',
+            '(?)',
+            '(++)',
+            '(--)',
+            '[??]',
+            '(d:bla[])',
             '[da]',
             '[sa]',
             '[ma]',
@@ -94,76 +93,50 @@ describe('aevum.format', function () {
             '[d500]',
             '[dd34]',
             '[d24de]',
-            '(d)[[da]]',
-            '(d)[[sa]]',
-            '(d)[[ma]]',
-            '(d)[[ha]]',
-            //'(+)[#]',
-            //'(-)[#]',
-            '[+]',
-            '[-]',
-            '(?)',
+            '(d:(m:something))',
+            '[[da]]',
+            '[[sa]]',
+            '[[ma]]',
+            '[[ha]]'
         ].forEach(function(format) {
-            expect(function () {
+            expect(function() {
                 new Aevum(format);
-            }).to.throw(SyntaxError);
+            }, `expected ${format} to throw an error`).to.throw(SyntaxError);
         });
     });
 
-    it('should be an object', function () {
+    it('should be an object', function() {
         expect(new Aevum('something')).to.be.a('object');
     });
 
-    it('should have a format function', function () {
-        expect(new Aevum('something')).to.have.property('format').and.to.be.an('function');
+    it('should have a format function', function() {
+        expect(new Aevum('something'))
+            .to.have.property('format')
+            .and.to.be.an('function');
     });
 
-    it('should format correctly', function () {
+    it('should format correctly', function() {
         [
             {
                 type: 'd',
-                empty: [
-                    0,
-                    {}
-                ],
+                empty: [0, {}],
                 filled: [
                     1,
                     { milliseconds: 1 },
                     { seconds: 1 },
                     { minutes: 1 },
-                    { hours: 1 },
+                    { hours: 1 }
                 ]
             },
             {
                 type: 's',
-                empty: [
-                    0,
-                    {},
-                    999,
-                    { milliseconds: 999 },
-                    { seconds: 0 },
-                ],
-                filled: [
-                    1000,
-                    { seconds: 1 },
-                    { minutes: 1 },
-                    { hours: 1 },
-                ]
+                empty: [0, {}, 999, { milliseconds: 999 }, { seconds: 0 }],
+                filled: [1000, { seconds: 1 }, { minutes: 1 }, { hours: 1 }]
             },
             {
                 type: 'm',
-                empty: [
-                    0,
-                    {},
-                    59999,
-                    { milliseconds: 999 },
-                    { seconds: 59 },
-                ],
-                filled: [
-                    60000,
-                    { minutes: 1 },
-                    { hours: 1 },
-                ]
+                empty: [0, {}, 59999, { milliseconds: 999 }, { seconds: 59 }],
+                filled: [60000, { minutes: 1 }, { hours: 1 }]
             },
             {
                 type: 'h',
@@ -173,58 +146,77 @@ describe('aevum.format', function () {
                     3599999,
                     { milliseconds: 999 },
                     { seconds: 59 },
-                    { minutes: 59 },
+                    { minutes: 59 }
                 ],
-                filled: [
-                    3600000,
-                    { hours: 1 },
-                ]
-            },
+                filled: [3600000, { hours: 1 }]
+            }
         ].forEach(function(obj) {
-            var format = new Aevum('(' + obj.type + ')[test]');
+            const formatString = `(${obj.type}:test)`;
+            const format = new Aevum(formatString);
 
             obj.empty.forEach(function(time) {
-                expect(format.format(time)).to.be.equal('');
+                expect(
+                    format.format(time),
+                    `format-string '${formatString}' with time '${JSON.stringify(
+                        time
+                    )}'`
+                ).to.be.equal('');
             });
 
             obj.filled.forEach(function(time) {
-                expect(format.format(time)).to.be.equal('test');
+                expect(
+                    format.format(time),
+                    `format-string '${formatString}' with time '${JSON.stringify(
+                        time
+                    )}'`
+                ).to.be.equal('test');
             });
         });
     });
 
-    it('should format padding correctly', function () {
+    it('should format padding correctly', function() {
         [
             {
                 type: 's',
                 below: ['d'],
-                time: { seconds: 1 },
+                time: { seconds: 1 }
             },
             {
                 type: 'm',
                 below: ['d', 's'],
-                time: { minutes: 1 },
+                time: { minutes: 1 }
             },
             {
                 type: 'h',
                 below: ['d', 's', 'm'],
-                time: { hours: 1 },
-            },
+                time: { hours: 1 }
+            }
         ].forEach(function(obj) {
-            obj.below.forEach(function(b) {
-                var tmp = new Aevum('(' + obj.type + ')[[' + b + ']]');
-                expect(tmp.format(obj.time, true)).to.be.equal(b === 'd' ? '000' : '00');
-                expect(tmp.format(obj.time)).to.be.equal('0');
+            obj.below.forEach(function(belowType) {
+                const formatString = `(${obj.type}:[${belowType}])`;
+                const format = new Aevum(formatString);
+                expect(
+                    format.format(obj.time, { padding: true }),
+                    `padding with format '${formatString}' and time '${JSON.stringify(
+                        obj.time
+                    )}'`
+                ).to.be.equal(belowType === 'd' ? '000' : '00');
+                expect(
+                    format.format(obj.time),
+                    `no padding with format '${formatString}' and time '${JSON.stringify(
+                        obj.time
+                    )}'`
+                ).to.be.equal('0');
             });
         });
     });
 
-    it('should format timing-indicators correctly', function () {
-        var minus = new Aevum('(-)[-][d]');
+    it('should format timing-indicators correctly', function() {
+        var minus = new Aevum('(-)[d]');
         expect(minus.format(-1)).to.be.equal('-1');
         expect(minus.format(1)).to.be.equal('1');
 
-        var plus = new Aevum('(+)[+][d]');
+        var plus = new Aevum('(+)[d]');
         expect(plus.format(1)).to.be.equal('+1');
         expect(plus.format(-1)).to.be.equal('1');
 
@@ -233,7 +225,7 @@ describe('aevum.format', function () {
         expect(both.format(-1)).to.be.equal('-1');
     });
 
-    it('should throw time errors', function () {
+    it('should throw time errors', function() {
         var format = new Aevum('something');
         [
             undefined,
@@ -245,18 +237,18 @@ describe('aevum.format', function () {
             -Infinity,
             ['whatever'],
             true,
-            false,
+            false
         ].forEach(function(invalid) {
-            expect(function () {
+            expect(function() {
                 format.format(invalid);
             }).to.throw(TypeError);
         });
     });
 
     it('should truncate decimals', function() {
-        const instance = new Aevum('(-)[-][d]');
-        expect(instance.format(0.1234)).to.be.equal('0');
-        expect(instance.format(1.1234)).to.be.equal('1');
-        expect(instance.format(-1.1234)).to.be.equal('-1');
+        const instance = new Aevum('(-)[d]');
+        expect(instance.format(0.1234), `zero should be positive`).to.be.equal('0');
+        expect(instance.format(1.1234), `one should be positive`).to.be.equal('1');
+        expect(instance.format(-1.1234), `minus one should be negative`).to.be.equal('-1');
     });
 });

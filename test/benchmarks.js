@@ -4,7 +4,7 @@ const aevum = require('../dist');
 
 // Difference between AOT and JIT tokenizing
 (function(suite) {
-    const formatString = '(h)[h:](m)[m:](s)[s:](d)[ddd]';
+    const formatString = '(h:#:)(m:#:)(s:#:)(d:ddd)';
     const data = {
         hours: 1,
         minutes: 23,
