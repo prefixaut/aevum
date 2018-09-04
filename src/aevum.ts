@@ -66,7 +66,10 @@ export class Aevum {
      * @param content Any Number (not NaN/Infinite) or an Object which represents an existing time-object.
      * @param options Options which should be applied when formatting the content
      */
-    public format(content: number | object, options: FormattingOptions = { padding: false, safe: false }): string {
+    public format(
+        content: number | object,
+        options: FormattingOptions = { padding: false, safe: false }
+    ): string {
         const time = this.toTime(content, !!options.safe);
 
         // The content we build together
@@ -75,7 +78,7 @@ export class Aevum {
         let arr: (string | Token)[] = [];
         // Keys for both the time and compiled object
         const keys = ['hours', 'minutes', 'seconds', 'milliseconds'];
-        // Flag if `arr` has changed
+        // If the array was set properly
         let flag = false;
 
         // Iterating over all keys, from biggest to smallest
@@ -178,7 +181,11 @@ export class Aevum {
         return out as Time;
     }
 
-    private renderPart(part: string | Token, time: Time, padding: boolean): string {
+    private renderPart(
+        part: string | Token,
+        time: Time,
+        padding: boolean
+    ): string {
         if (typeof part === 'string') {
             return part;
         }
@@ -189,7 +196,10 @@ export class Aevum {
         }
 
         // Handle special type '+' and '-'
-        if (part.type === TokenType.NEGATIVE || part.type === TokenType.POSITIVE) {
+        if (
+            part.type === TokenType.NEGATIVE ||
+            part.type === TokenType.POSITIVE
+        ) {
             let build = '';
             if (
                 !part.optional ||
@@ -207,7 +217,7 @@ export class Aevum {
         }
 
         // Handle all the other types
-        return this.renderTimePart(part.type, part.length, time, padding);
+        return this.renderToken(part, time, padding);
     }
 
     private shake(tokens: (string | Token)[]) {
@@ -220,26 +230,33 @@ export class Aevum {
         const length = tokens.length;
         for (let i = 0; i < length; i++) {
             const t = tokens[i];
+            let pushToAll = false;
 
             if (typeof t === 'string') {
-                this.pushIntoAll(t, hours, minutes, seconds, milliseconds, all);
+                pushToAll = true;
+
                 continue;
+            } else {
+                if (
+                    t.optional ||
+                    t.type === TokenType.NEGATIVE ||
+                    t.type === TokenType.POSITIVE ||
+                    t.type === TokenType.RELATIVE
+                ) {
+                    pushToAll = true;
+                }
             }
 
-            if (!t.optional) {
+            if (pushToAll) {
                 this.pushIntoAll(t, hours, minutes, seconds, milliseconds, all);
-                continue;
-            }
-
-            if (t.type === TokenType.NEGATIVE || t.type === TokenType.POSITIVE) {
-                (t.format as (string|Token)[]).forEach(element => {
-                    this.pushIntoAll(element, hours, minutes, seconds, milliseconds);
-                });
                 continue;
             }
 
             const arrays: (string | Token)[][] = [];
             switch (t.type) {
+                case TokenType.NEGATIVE:
+                case TokenType.POSITIVE:
+                case TokenType.RELATIVE:
                 case TokenType.MILLISECOND:
                     arrays.push(milliseconds);
                 case TokenType.SECOND:
@@ -266,16 +283,20 @@ export class Aevum {
         };
     }
 
-    private pushIntoAll(value: string | Token, ...arrays: (string | Token)[][]) {
+    private pushIntoAll(
+        value: string | Token,
+        ...arrays: (string | Token)[][]
+    ) {
         arrays.forEach(arr => {
             arr.push(value);
         });
     }
 
-    private renderTimePart(type: string, length: number, time: Time, padding: boolean) {
+    private renderToken(token: Token, time: Time, padding: boolean) {
         let value = 0;
+        let renderAnyways = false;
 
-        switch (type) {
+        switch (token.type) {
             case TokenType.HOUR:
                 value = time.hours || 0;
                 break;
@@ -290,9 +311,9 @@ export class Aevum {
                 break;
         }
 
-        if (padding) {
+        if (padding || value === 0) {
             let tmp = 0;
-            switch (type) {
+            switch (token.type) {
                 case TokenType.MILLISECOND:
                     if (tmp === 0) {
                         tmp = time.seconds || tmp;
@@ -307,12 +328,27 @@ export class Aevum {
                     }
             }
             if (tmp > 0) {
-                length = TimeTypes[type];
+                renderAnyways = true;
+                if (padding) {
+                    token.length = TimeTypes[token.type];
+                }
             }
         }
 
+        if (token.optional) {
+            if (
+                (value === 0 && !renderAnyways) ||
+                !Array.isArray(token.format)
+            ) {
+                return '';
+            }
+            return token.format
+                .map(nestedPart => this.renderPart(nestedPart, time, padding))
+                .join('');
+        }
+
         let str = value.toString();
-        const len = length - str.length;
+        const len = token.length - str.length;
         for (let i = 0; i < len; i++) {
             str = '0' + str;
         }
