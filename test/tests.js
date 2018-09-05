@@ -211,11 +211,11 @@ describe('aevum.format', function() {
 
                 expect(
                     instance.format(obj.time, { padding: true }),
-                    `padding, expand with format '${formatString}' and time '${timeString}'`
+                    `padding with format '${formatString}' and time '${timeString}'`
                 ).to.be.equal(belowType === 'd' ? '000' : '00');
                 expect(
                     instance.format(obj.time, { padding: false }),
-                    `no padding, expand with format '${formatString}' and time '${timeString}'`
+                    `no padding with format '${formatString}' and time '${timeString}'`
                 ).to.be.equal('0');
             });
         });

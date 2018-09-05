@@ -256,7 +256,7 @@ export class Aevum {
                 continue;
             } else {
                 if (
-                    t.optional ||
+                    !t.optional ||
                     t.type === TokenType.NEGATIVE ||
                     t.type === TokenType.POSITIVE ||
                     t.type === TokenType.RELATIVE
@@ -302,41 +302,41 @@ export class Aevum {
     }
 
     private renderToken(token: Token, time: Time, options: FormattingOptions) {
-        let value = 0;
+        let typeLength = 0;
         let renderAnyways = false;
 
         switch (token.type) {
             case TokenType.HOUR:
-                value = time.hours || 0;
+                typeLength = time.hours || 0;
                 break;
             case TokenType.MINUTE:
-                value = time.minutes || 0;
+                typeLength = time.minutes || 0;
                 break;
             case TokenType.SECOND:
-                value = time.seconds || 0;
+                typeLength = time.seconds || 0;
                 break;
             case TokenType.MILLISECOND:
-                value = time.milliseconds || 0;
+                typeLength = time.milliseconds || 0;
                 break;
         }
 
-        if (!!options.padding || (!!options.expand && value === 0)) {
-            let tmp = 0;
+        if (!!options.padding || (!!options.expand && typeLength === 0)) {
+            let aboveType = 0;
             switch (token.type) {
                 case TokenType.MILLISECOND:
-                    if (tmp === 0) {
-                        tmp = time.seconds || tmp;
+                    if (aboveType === 0) {
+                        aboveType = time.seconds || aboveType;
                     }
                 case TokenType.SECOND:
-                    if (tmp === 0) {
-                        tmp = time.minutes || tmp;
+                    if (aboveType === 0) {
+                        aboveType = time.minutes || aboveType;
                     }
                 case TokenType.MINUTE:
-                    if (tmp === 0) {
-                        tmp = time.hours || tmp;
+                    if (aboveType === 0) {
+                        aboveType = time.hours || aboveType;
                     }
             }
-            if (tmp > 0) {
+            if (aboveType > 0) {
                 renderAnyways = true;
                 if (!!options.padding) {
                     token.length = TimeTypes[token.type];
@@ -346,7 +346,7 @@ export class Aevum {
 
         if (token.optional) {
             if (
-                (value === 0 && !renderAnyways) ||
+                (typeLength === 0 && !renderAnyways) ||
                 !Array.isArray(token.format)
             ) {
                 return '';
@@ -356,15 +356,15 @@ export class Aevum {
                 .join('');
         }
 
-        let str = value.toString();
-        const len = token.length - str.length;
+        let str = typeLength.toString();
+        const paddingLength = token.length - str.length;
 
-        if (len > 0) {
-            for (let i = 0; i < len; i++) {
+        if (paddingLength > 0 && !!options.padding) {
+            for (let i = 0; i < paddingLength; i++) {
                 str = '0' + str;
             }
             return str;
-        } else if (!options.expand) {
+        } else if (!options.expand && str.length > token.length) {
             return str.substring(0, token.length);
         } else {
             return str;
