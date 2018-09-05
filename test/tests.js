@@ -115,10 +115,17 @@ describe('aevum.format', function() {
             .and.to.be.an('function');
     });
 
+    it('should render inbetween strings', function() {
+        expect(
+            new Aevum('hi-[d]-welcome-[d]-to-[d]-somewhere').format(1)
+        ).to.be.equal('hi-1-welcome-1-to-1-somewhere');
+    });
+
     it('should format correctly', function() {
         [
             {
                 type: 'd',
+                timeType: 'milliseconds',
                 empty: [0, {}],
                 filled: [
                     1,
@@ -130,16 +137,19 @@ describe('aevum.format', function() {
             },
             {
                 type: 's',
+                timeType: 'seconds',
                 empty: [0, {}, 999, { milliseconds: 999 }, { seconds: 0 }],
                 filled: [1000, { seconds: 1 }, { minutes: 1 }, { hours: 1 }]
             },
             {
                 type: 'm',
+                timeType: 'minutes',
                 empty: [0, {}, 59999, { milliseconds: 999 }, { seconds: 59 }],
                 filled: [60000, { minutes: 1 }, { hours: 1 }]
             },
             {
                 type: 'h',
+                timeType: 'hours',
                 empty: [
                     0,
                     {},
@@ -151,13 +161,19 @@ describe('aevum.format', function() {
                 filled: [3600000, { hours: 1 }]
             }
         ].forEach(function(obj) {
-            const timeString = JSON.stringify(obj.time);
+            const timeString =
+                typeof obj.time === 'number'
+                    ? obj.time
+                    : JSON.stringify(obj.time);
 
             const formatString = `(${obj.type}:test)`;
             const instance = new Aevum(formatString);
 
             const expandString = `[${obj.type}]`;
             const expandInstance = new Aevum(expandString);
+            const expandTime = {};
+            expandTime[obj.timeType] = 98;
+            const expandTimeString = JSON.stringify(expandTime);
 
             obj.empty.forEach(function(time) {
                 expect(
@@ -174,13 +190,13 @@ describe('aevum.format', function() {
             });
 
             expect(
-                expandInstance.format({ [obj.type]: 98 }, { expand: true }),
-                `expand with format '${expandString}' and time '${timeString}'`
+                expandInstance.format(expandTime, { expand: true }),
+                `expand with format '${expandString}' and time '${expandTimeString}'`
             ).to.be.equal('98');
 
             expect(
-                expandInstance.format({ [obj.type]: 98 }, { expand: false }),
-                `no expand with format '${expandString}' and time '${timeString}'`
+                expandInstance.format(expandTime, { expand: false }),
+                `no expand with format '${expandString}' and time '${expandTimeString}'`
             ).to.be.equal('9');
         });
     });
@@ -204,7 +220,10 @@ describe('aevum.format', function() {
             }
         ].forEach(function(obj) {
             obj.below.forEach(function(belowType) {
-                const timeString = JSON.stringify(obj.time);
+                const timeString =
+                    typeof obj.time === 'number'
+                        ? obj.time
+                        : JSON.stringify(obj.time);
 
                 const formatString = `(${obj.type}:[${belowType}])`;
                 const instance = new Aevum(formatString);
@@ -245,13 +264,12 @@ describe('aevum.format', function() {
             Infinity,
             -NaN,
             -Infinity,
-            ['whatever'],
             true,
             false
         ].forEach(function(invalid) {
             expect(function() {
                 format.format(invalid);
-            }).to.throw(TypeError);
+            }, `element '${invalid}' to be invalid`).to.throw(TypeError);
         });
     });
 

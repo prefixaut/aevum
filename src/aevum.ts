@@ -17,8 +17,6 @@ export interface FormattingOptions {
     expand?: boolean;
     /** If the time has a bigger unit, it'll automatically apply padding to the units below it */
     padding?: boolean;
-    /** If the content is safe to get without transformations */
-    safe?: boolean;
 }
 
 /**
@@ -56,8 +54,7 @@ export class Aevum {
 
     private readonly defaultOptions: FormattingOptions = {
         expand: true,
-        padding: false,
-        safe: false
+        padding: false
     };
 
     /**
@@ -77,20 +74,18 @@ export class Aevum {
      * Formats the content into the format with which this Aevum-Object was
      * initialized.
      *
-     * @param content Any Number (not NaN/Infinite) or an Object which represents an existing time-object.
+     * @param content Any Number (not NaN/Infinite) or a Time Object.
      * @param options Options which should be applied when formatting the content
      */
     public format(
-        content: number | object,
+        content: number | Time,
         options: FormattingOptions = this.defaultOptions
     ): string {
         if (options != null) {
             options = { ...this.defaultOptions, ...options };
         }
-        const time = this.toTime(content, !!options.safe);
 
-        // The content we build together
-        let build = '';
+        const time = this.toTime(content);
         // The shook array that is being used.
         let arr: (string | Token)[] = [];
         // Keys for both the time and compiled object
@@ -113,96 +108,133 @@ export class Aevum {
             arr = this.compiled.all;
         }
 
+        const expand = !!options.expand;
+        const padding = !!options.padding;
+        // The content we build together
+        let build = '';
+
         // Rendering all parts of the array and putting it into the build-string.
         for (let i = 0; i < arr.length; i++) {
-            build += this.renderPart(arr[i], time, options);
+            build += this.renderPart(arr[i], time, !!expand, !!padding);
         }
 
         return build;
     }
 
-    private toTime(content: number | object, safe: boolean): Time {
+    private shake(tokens: (string | Token)[]) {
+        const hours: (string | Token)[] = [];
+        const minutes: (string | Token)[] = [];
+        const seconds: (string | Token)[] = [];
+        const milliseconds: (string | Token)[] = [];
+        const all: (string | Token)[] = [];
+
+        const length = tokens.length;
+        for (let i = 0; i < length; i++) {
+            const token = tokens[i];
+
+            if (typeof token === 'string') {
+                if (token !== '') {
+                    pushValueInto(
+                        token,
+                        hours,
+                        minutes,
+                        seconds,
+                        milliseconds,
+                        all
+                    );
+                }
+                continue;
+            }
+
+            const type = token.type;
+            if (
+                !token.optional ||
+                type === TokenType.NEGATIVE ||
+                type === TokenType.POSITIVE ||
+                type === TokenType.RELATIVE
+            ) {
+                pushValueInto(
+                    token,
+                    hours,
+                    minutes,
+                    seconds,
+                    milliseconds,
+                    all
+                );
+                continue;
+            }
+
+            const arrays: (string | Token)[][] = [];
+            switch (type) {
+                case TokenType.MILLISECOND:
+                    arrays.push(milliseconds);
+                case TokenType.SECOND:
+                    arrays.push(seconds);
+                case TokenType.MINUTE:
+                    arrays.push(minutes);
+                case TokenType.HOUR:
+                    arrays.push(hours);
+            }
+
+            const formatTokens = token.format || [token];
+            const formatLength = formatTokens.length;
+            for (let k = 0; k < formatLength; k++) {
+                pushValueInto(formatTokens[k], ...arrays);
+            }
+        }
+
+        return {
+            hours,
+            minutes,
+            seconds,
+            milliseconds,
+            all
+        };
+    }
+
+    private toTime(content: number | Time): Time {
         let positive = true;
-
         const type = typeof content;
-        if (type === 'undefined' || content === null) {
-            throw new TypeError('The time may not be null or undefined!');
-        }
-        if (type !== 'number' && type !== 'object') {
-            throw new TypeError(`Invalid type "${type}"!`);
-        }
 
-        if (typeof content === 'number') {
-            if (!safe) {
-                if (isNaN(content) || !isFinite(content)) {
-                    throw new TypeError('The number may not be NaN/Infinite!');
-                }
-            }
-
-            if (content < 0) {
-                positive = false;
-                content = content * -1;
-            }
-
-            // Remove floating-points
-            content = content - (content % 1);
-
-            // Parse an timing object from the number
-            return {
-                positive,
-                hours: (content / 3600000) | 0,
-                minutes: (content / 60000) % 60 | 0,
-                seconds: (content / 1000) % 60 | 0,
-                milliseconds: content % 1000 | 0
-            };
+        if (
+            type === 'undefined' ||
+            content === null ||
+            (type !== 'object' && type !== 'number')
+        ) {
+            throw new TypeError('The time has to be a number or an object!');
         }
 
-        if (safe) {
-            return content as Time;
+        if (typeof content !== 'number') {
+            return { positive: true, ...content };
         }
 
-        if (Array.isArray(content)) {
-            throw new TypeError('The time may not be an array!');
+        if (isNaN(content) || !isFinite(content)) {
+            throw new TypeError('The number may not be NaN/Infinite!');
         }
 
-        if ('positive' in content) {
-            positive = !!(content as any).positive;
+        if (content < 0) {
+            positive = false;
+            content = content * -1;
         }
 
-        const out = {
-            positive
+        // Remove floating-points
+        content = content - (content % 1);
+
+        // Parse an timing object from the number
+        return {
+            positive,
+            hours: (content / 3600000) | 0,
+            minutes: (content / 60000) % 60 | 0,
+            seconds: (content / 1000) % 60 | 0,
+            milliseconds: content % 1000 | 0
         };
-
-        const map = {
-            hours: ['hours', 'hour', 'h'],
-            minutes: ['minutes', 'minute', 'm'],
-            seconds: ['seconds', 'second', 's'],
-            milliseconds: ['milliseconds', 'millisecond', 'milli', 'd']
-        };
-
-        const keys = Object.keys(map); // tslint:disable-line
-        for (let i = 0; i < keys.length; i++) {
-            const obj = map[keys[i]];
-
-            for (let k = 0; k < obj.length; k++) {
-                if (!content.hasOwnProperty(obj[k])) {
-                    continue;
-                }
-                const value = content[obj[k]];
-                if (isNaN(value) || !isFinite(value)) {
-                    continue;
-                }
-                out[keys[i]] = value - (value % 1);
-            }
-        }
-
-        return out as Time;
     }
 
     private renderPart(
         part: string | Token,
         time: Time,
-        options: FormattingOptions
+        expand: boolean,
+        padding: boolean
     ): string {
         if (typeof part === 'string') {
             return part;
@@ -220,151 +252,78 @@ export class Aevum {
         ) {
             let build = '';
             if (
-                !part.optional ||
-                (part.optional &&
-                    ((part.type === TokenType.NEGATIVE && !time.positive) ||
-                        (part.type === TokenType.POSITIVE && time.positive)))
+                ((part.type === TokenType.NEGATIVE && !time.positive) ||
+                    (part.type === TokenType.POSITIVE && time.positive)) &&
+                part.format != null
             ) {
-                if (part.format != null) {
-                    for (let i = 0; i < part.format.length; i++) {
-                        build += this.renderPart(part.format[i], time, options);
-                    }
+                for (let i = 0; i < part.format.length; i++) {
+                    build += this.renderPart(
+                        part.format[i],
+                        time,
+                        expand,
+                        padding
+                    );
                 }
             }
             return build;
         }
 
         // Handle all the other types
-        return this.renderToken(part, time, options);
+        return this.renderTimeToken(part, time, expand, padding);
     }
 
-    private shake(tokens: (string | Token)[]) {
-        const hours: (string | Token)[] = [];
-        const minutes: (string | Token)[] = [];
-        const seconds: (string | Token)[] = [];
-        const milliseconds: (string | Token)[] = [];
-        const all: (string | Token)[] = [];
-
-        const length = tokens.length;
-        for (let i = 0; i < length; i++) {
-            const t = tokens[i];
-            let pushToAll = false;
-
-            if (typeof t === 'string') {
-                pushToAll = true;
-
-                continue;
-            } else {
-                if (
-                    !t.optional ||
-                    t.type === TokenType.NEGATIVE ||
-                    t.type === TokenType.POSITIVE ||
-                    t.type === TokenType.RELATIVE
-                ) {
-                    pushToAll = true;
-                }
-            }
-
-            if (pushToAll) {
-                pushValueInto(t, hours, minutes, seconds, milliseconds, all);
-                continue;
-            }
-
-            const arrays: (string | Token)[][] = [];
-            switch (t.type) {
-                case TokenType.NEGATIVE:
-                case TokenType.POSITIVE:
-                case TokenType.RELATIVE:
-                case TokenType.MILLISECOND:
-                    arrays.push(milliseconds);
-                case TokenType.SECOND:
-                    arrays.push(seconds);
-                case TokenType.MINUTE:
-                    arrays.push(minutes);
-                case TokenType.HOUR:
-                    arrays.push(hours);
-            }
-
-            const formatTokens = t.format || [t];
-            const formatLength = formatTokens.length;
-            for (let k = 0; k < formatLength; k++) {
-                pushValueInto(formatTokens[k], ...arrays);
-            }
-        }
-
-        return {
-            hours,
-            minutes,
-            seconds,
-            milliseconds,
-            all
-        };
-    }
-
-    private renderToken(token: Token, time: Time, options: FormattingOptions) {
+    private renderTimeToken(
+        token: Token,
+        time: Time,
+        expand: boolean,
+        padding: boolean
+    ) {
         let typeLength = 0;
-        let renderAnyways = false;
 
-        switch (token.type) {
-            case TokenType.HOUR:
-                typeLength = time.hours || 0;
-                break;
-            case TokenType.MINUTE:
-                typeLength = time.minutes || 0;
-                break;
-            case TokenType.SECOND:
-                typeLength = time.seconds || 0;
-                break;
-            case TokenType.MILLISECOND:
-                typeLength = time.milliseconds || 0;
-                break;
+        let aboveTypeLength = 0;
+
+        if (token.type === TokenType.HOUR) {
+            typeLength = time.hours || 0;
+        } else if (token.type === TokenType.MINUTE) {
+            typeLength = time.minutes || 0;
+            aboveTypeLength = time.hours;
+        } else if (token.type === TokenType.SECOND) {
+            typeLength = time.seconds || 0;
+            aboveTypeLength = time.hours || time.minutes;
+        } else if (token.type === TokenType.MILLISECOND) {
+            typeLength = time.milliseconds || 0;
+            aboveTypeLength = time.hours || time.minutes || time.seconds;
         }
 
-        if (!!options.padding || (!!options.expand && typeLength === 0)) {
-            let aboveType = 0;
-            switch (token.type) {
-                case TokenType.MILLISECOND:
-                    if (aboveType === 0) {
-                        aboveType = time.seconds || aboveType;
-                    }
-                case TokenType.SECOND:
-                    if (aboveType === 0) {
-                        aboveType = time.minutes || aboveType;
-                    }
-                case TokenType.MINUTE:
-                    if (aboveType === 0) {
-                        aboveType = time.hours || aboveType;
-                    }
-            }
-            if (aboveType > 0) {
-                renderAnyways = true;
-                if (!!options.padding) {
-                    token.length = TimeTypes[token.type];
-                }
-            }
-        }
+        const renderAnyways = expand && typeLength === 0 && aboveTypeLength > 0;
 
         if (token.optional) {
-            if (
-                (typeLength === 0 && !renderAnyways) ||
-                !Array.isArray(token.format)
-            ) {
+            if (!renderAnyways || token.format == null) {
                 return '';
             }
-            return token.format
-                .map(nestedPart => this.renderPart(nestedPart, time, options))
-                .join('');
+
+            let build = '';
+            for (let i = 0; i < token.format.length; i++) {
+                build += this.renderPart(
+                    token.format[i],
+                    time,
+                    expand,
+                    padding
+                );
+            }
+            return build;
         }
 
-        let str = typeLength.toString();
+        if (padding && aboveTypeLength > 0) {
+            token.length = TimeTypes[token.type];
+        }
+
+        const str = '' + typeLength;
         const paddingLength = token.length - str.length;
 
-        if (paddingLength > 0 && !!options.padding) {
-            for (let i = 0; i < paddingLength; i++) {
-                str = '0' + str;
-            }
-            return str;
-        } else if (!options.expand && str.length > token.length) {
+        if (padding && paddingLength > 0) {
+            return '0'.repeat(paddingLength) + str;
+        } else if (!expand && str.length > token.length) {
             return str.substring(0, token.length);
         } else {
             return str;
