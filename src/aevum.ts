@@ -13,6 +13,8 @@ export interface Time {
 }
 
 export interface FormattingOptions {
+    /** If elements should be allowed to be longer than the provided length */
+    expand?: boolean;
     /** If the time has a bigger unit, it'll automatically apply padding to the units below it */
     padding?: boolean;
     /** If the content is safe to get without transformations */
@@ -31,6 +33,12 @@ export const TimeTypes: { [key: string]: number } = {
     d: 3
 };
 
+function pushValueInto<T>(value: T, ...arrays: (T)[][]) {
+    arrays.forEach(arr => {
+        arr.push(value);
+    });
+}
+
 /**
  * Class which represents an Aevum formatter.
  * On initialization it's parsing the provided format which can then be
@@ -45,6 +53,12 @@ export class Aevum {
      * Shook tokens mapped by the time-keys.
      */
     private compiled: { [key: string]: Array<string | Token> };
+
+    private readonly defaultOptions: FormattingOptions = {
+        expand: true,
+        padding: false,
+        safe: false
+    };
 
     /**
      * Creates an Aevum-Object with the given format-string.
@@ -68,8 +82,11 @@ export class Aevum {
      */
     public format(
         content: number | object,
-        options: FormattingOptions = { padding: false, safe: false }
+        options: FormattingOptions = this.defaultOptions
     ): string {
+        if (options != null) {
+            options = { ...this.defaultOptions, ...options };
+        }
         const time = this.toTime(content, !!options.safe);
 
         // The content we build together
@@ -91,13 +108,14 @@ export class Aevum {
             }
         }
 
+        // If it couldn't find a time-array, just use the 'all'
         if (!flag) {
             arr = this.compiled.all;
         }
 
         // Rendering all parts of the array and putting it into the build-string.
         for (let i = 0; i < arr.length; i++) {
-            build += this.renderPart(arr[i], time, !!options.padding);
+            build += this.renderPart(arr[i], time, options);
         }
 
         return build;
@@ -184,7 +202,7 @@ export class Aevum {
     private renderPart(
         part: string | Token,
         time: Time,
-        padding: boolean
+        options: FormattingOptions
     ): string {
         if (typeof part === 'string') {
             return part;
@@ -209,7 +227,7 @@ export class Aevum {
             ) {
                 if (part.format != null) {
                     for (let i = 0; i < part.format.length; i++) {
-                        build += this.renderPart(part.format[i], time, padding);
+                        build += this.renderPart(part.format[i], time, options);
                     }
                 }
             }
@@ -217,7 +235,7 @@ export class Aevum {
         }
 
         // Handle all the other types
-        return this.renderToken(part, time, padding);
+        return this.renderToken(part, time, options);
     }
 
     private shake(tokens: (string | Token)[]) {
@@ -248,7 +266,7 @@ export class Aevum {
             }
 
             if (pushToAll) {
-                this.pushIntoAll(t, hours, minutes, seconds, milliseconds, all);
+                pushValueInto(t, hours, minutes, seconds, milliseconds, all);
                 continue;
             }
 
@@ -270,7 +288,7 @@ export class Aevum {
             const formatTokens = t.format || [t];
             const formatLength = formatTokens.length;
             for (let k = 0; k < formatLength; k++) {
-                this.pushIntoAll(formatTokens[k], ...arrays);
+                pushValueInto(formatTokens[k], ...arrays);
             }
         }
 
@@ -283,16 +301,7 @@ export class Aevum {
         };
     }
 
-    private pushIntoAll(
-        value: string | Token,
-        ...arrays: (string | Token)[][]
-    ) {
-        arrays.forEach(arr => {
-            arr.push(value);
-        });
-    }
-
-    private renderToken(token: Token, time: Time, padding: boolean) {
+    private renderToken(token: Token, time: Time, options: FormattingOptions) {
         let value = 0;
         let renderAnyways = false;
 
@@ -311,7 +320,7 @@ export class Aevum {
                 break;
         }
 
-        if (padding || value === 0) {
+        if (!!options.padding || (!!options.expand && value === 0)) {
             let tmp = 0;
             switch (token.type) {
                 case TokenType.MILLISECOND:
@@ -329,7 +338,7 @@ export class Aevum {
             }
             if (tmp > 0) {
                 renderAnyways = true;
-                if (padding) {
+                if (!!options.padding) {
                     token.length = TimeTypes[token.type];
                 }
             }
@@ -343,15 +352,22 @@ export class Aevum {
                 return '';
             }
             return token.format
-                .map(nestedPart => this.renderPart(nestedPart, time, padding))
+                .map(nestedPart => this.renderPart(nestedPart, time, options))
                 .join('');
         }
 
         let str = value.toString();
         const len = token.length - str.length;
-        for (let i = 0; i < len; i++) {
-            str = '0' + str;
+
+        if (len > 0) {
+            for (let i = 0; i < len; i++) {
+                str = '0' + str;
+            }
+            return str;
+        } else if (!options.expand) {
+            return str.substring(0, token.length);
+        } else {
+            return str;
         }
-        return str;
     }
 }

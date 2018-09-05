@@ -151,26 +151,37 @@ describe('aevum.format', function() {
                 filled: [3600000, { hours: 1 }]
             }
         ].forEach(function(obj) {
+            const timeString = JSON.stringify(obj.time);
+
             const formatString = `(${obj.type}:test)`;
-            const format = new Aevum(formatString);
+            const instance = new Aevum(formatString);
+
+            const expandString = `[${obj.type}]`;
+            const expandInstance = new Aevum(expandString);
 
             obj.empty.forEach(function(time) {
                 expect(
-                    format.format(time),
-                    `format-string '${formatString}' with time '${JSON.stringify(
-                        time
-                    )}'`
+                    instance.format(time),
+                    `format-string '${formatString}' with time '${timeString}'`
                 ).to.be.equal('');
             });
 
             obj.filled.forEach(function(time) {
                 expect(
-                    format.format(time),
-                    `format-string '${formatString}' with time '${JSON.stringify(
-                        time
-                    )}'`
+                    instance.format(time),
+                    `format-string '${formatString}' with time '${timeString}'`
                 ).to.be.equal('test');
             });
+
+            expect(
+                expandInstance.format({ [obj.type]: 98 }, { expand: true }),
+                `expand with format '${expandString}' and time '${timeString}'`
+            ).to.be.equal('98');
+
+            expect(
+                expandInstance.format({ [obj.type]: 98 }, { expand: false }),
+                `no expand with format '${expandString}' and time '${timeString}'`
+            ).to.be.equal('9');
         });
     });
 
@@ -193,19 +204,18 @@ describe('aevum.format', function() {
             }
         ].forEach(function(obj) {
             obj.below.forEach(function(belowType) {
+                const timeString = JSON.stringify(obj.time);
+
                 const formatString = `(${obj.type}:[${belowType}])`;
-                const format = new Aevum(formatString);
+                const instance = new Aevum(formatString);
+
                 expect(
-                    format.format(obj.time, { padding: true }),
-                    `padding with format '${formatString}' and time '${JSON.stringify(
-                        obj.time
-                    )}'`
+                    instance.format(obj.time, { padding: true }),
+                    `padding, expand with format '${formatString}' and time '${timeString}'`
                 ).to.be.equal(belowType === 'd' ? '000' : '00');
                 expect(
-                    format.format(obj.time),
-                    `no padding with format '${formatString}' and time '${JSON.stringify(
-                        obj.time
-                    )}'`
+                    instance.format(obj.time, { padding: false }),
+                    `no padding, expand with format '${formatString}' and time '${timeString}'`
                 ).to.be.equal('0');
             });
         });
@@ -247,8 +257,15 @@ describe('aevum.format', function() {
 
     it('should truncate decimals', function() {
         const instance = new Aevum('(-)[d]');
-        expect(instance.format(0.1234), `zero should be positive`).to.be.equal('0');
-        expect(instance.format(1.1234), `one should be positive`).to.be.equal('1');
-        expect(instance.format(-1.1234), `minus one should be negative`).to.be.equal('-1');
+        expect(instance.format(0.1234), `zero should be positive`).to.be.equal(
+            '0'
+        );
+        expect(instance.format(1.1234), `one should be positive`).to.be.equal(
+            '1'
+        );
+        expect(
+            instance.format(-1.1234),
+            `minus one should be negative`
+        ).to.be.equal('-1');
     });
 });
