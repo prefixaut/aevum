@@ -66,7 +66,7 @@ const aevum = require('../dist');
     }).add('none', function() {
         instance.format(time, { padding: false, expand: false });
     }).run();
-})(new benchmark.Suite('Aevum#format: Un-Safe vs Safe', {
+})(new benchmark.Suite('Aevum#format: formatting options', {
     onStart: startHandler,
     onCycle: cycleHandler,
     onComplete: completeHandler,
