@@ -1,9 +1,14 @@
-if (typeof require === 'function') {
-    var Aevum = require('../dist').Aevum;
-    var chai = require('chai');
-    var expect = chai.expect;
-} else {
-    var Aevum = window.aevum.Aevum;
+const chai = require('chai');
+const expect = chai.expect;
+
+const Aevum = require('../dist').Aevum;
+
+function testWithSettings(settings) {
+    const instance = new Aevum(settings.format);
+    expect(
+        instance.format(settings.time, settings.options),
+        `test with settings: ${JSON.stringify(settings)}`
+    ).to.be.equal(settings.output);
 }
 
 describe('aevum constructor', function() {
@@ -27,8 +32,8 @@ describe('aevum.format', function() {
             'hello',
             '(d:content)',
             '(d:other[mm]content)',
-            'hello\\[dude]',
-            '(d:hello\\[dude])',
+            'hello\\[world]',
+            '(d:hello\\[world])',
             '(+)',
             '(-)',
             '[?]',
@@ -116,39 +121,29 @@ describe('aevum.format', function() {
     });
 
     it('should render inbetween strings', function() {
-        expect(
-            new Aevum('hi-[d]-welcome-[d]-to-[d]-somewhere').format(1)
-        ).to.be.equal('hi-1-welcome-1-to-1-somewhere');
+        testWithSettings({
+            format: 'hi-[d]-welcome-[d]-to-[d]-somewhere',
+            time: 1,
+            output: 'hi-1-welcome-1-to-1-somewhere'
+        });
     });
 
     it('should format correctly', function() {
         [
             {
-                type: 'd',
-                timeType: 'milliseconds',
-                empty: [0, {}],
-                filled: [
-                    1,
-                    { milliseconds: 1 },
-                    { seconds: 1 },
-                    { minutes: 1 },
-                    { hours: 1 }
-                ]
-            },
-            {
-                type: 's',
+                tokenType: 's',
                 timeType: 'seconds',
                 empty: [0, {}, 999, { milliseconds: 999 }, { seconds: 0 }],
                 filled: [1000, { seconds: 1 }, { minutes: 1 }, { hours: 1 }]
             },
             {
-                type: 'm',
+                tokenType: 'm',
                 timeType: 'minutes',
                 empty: [0, {}, 59999, { milliseconds: 999 }, { seconds: 59 }],
                 filled: [60000, { minutes: 1 }, { hours: 1 }]
             },
             {
-                type: 'h',
+                tokenType: 'h',
                 timeType: 'hours',
                 empty: [
                     0,
@@ -161,83 +156,189 @@ describe('aevum.format', function() {
                 filled: [3600000, { hours: 1 }]
             }
         ].forEach(function(obj) {
-            const timeString =
-                typeof obj.time === 'number'
-                    ? obj.time
-                    : JSON.stringify(obj.time);
-
-            const formatString = `(${obj.type}:test)`;
-            const instance = new Aevum(formatString);
-
-            const expandString = `[${obj.type}]`;
-            const expandInstance = new Aevum(expandString);
-            const expandTime = {};
-            expandTime[obj.timeType] = 98;
-            const expandTimeString = JSON.stringify(expandTime);
+            const format = `(${obj.tokenType}:test)`;
 
             obj.empty.forEach(function(time) {
-                expect(
-                    instance.format(time),
-                    `format-string '${formatString}' with time '${timeString}'`
-                ).to.be.equal('');
+                testWithSettings({ format, time, output: '' });
             });
 
             obj.filled.forEach(function(time) {
-                expect(
-                    instance.format(time),
-                    `format-string '${formatString}' with time '${timeString}'`
-                ).to.be.equal('test');
+                testWithSettings({
+                    format,
+                    time,
+                    output: 'test'
+                });
             });
-
-            expect(
-                expandInstance.format(expandTime, { expand: true }),
-                `expand with format '${expandString}' and time '${expandTimeString}'`
-            ).to.be.equal('98');
-
-            expect(
-                expandInstance.format(expandTime, { expand: false }),
-                `no expand with format '${expandString}' and time '${expandTimeString}'`
-            ).to.be.equal('9');
         });
+    });
+
+    it('should format expansions correctly', function() {
+        [
+            {
+                format: '[d]',
+                time: { milliseconds: 123 },
+                options: { expand: false },
+                output: '1'
+            },
+            {
+                format: '[d]',
+                time: { milliseconds: 123 },
+                options: { expand: true },
+                output: '123'
+            },
+            {
+                format: '[d]',
+                time: { milliseconds: 12 },
+                options: { expand: true },
+                output: '12'
+            },
+            {
+                format: '[s]',
+                time: { seconds: 12 },
+                options: { expand: false },
+                output: '1'
+            },
+            {
+                format: '[s]',
+                time: { seconds: 12 },
+                options: { expand: true },
+                output: '12'
+            },
+            {
+                format: '[m]',
+                time: { minutes: 12 },
+                options: { expand: false },
+                output: '1'
+            },
+            {
+                format: '[m]',
+                time: { minutes: 12 },
+                options: { expand: true },
+                output: '12'
+            },
+            {
+                format: '[h]',
+                time: { hours: 12 },
+                options: { expand: false },
+                output: '1'
+            },
+            {
+                format: '[h]',
+                time: { hours: 12 },
+                options: { expand: true },
+                output: '12'
+            },
+            {
+                format: '[h]',
+                time: { hours: 123 },
+                options: { expand: true },
+                output: '123'
+            }
+        ].forEach(testWithSettings);
     });
 
     it('should format padding correctly', function() {
         [
             {
-                type: 's',
-                below: ['d'],
-                time: { seconds: 1 }
+                format: '(s:[d])',
+                time: { seconds: 1 },
+                withPadding: '000',
+                withoutPadding: '0'
             },
             {
-                type: 'm',
-                below: ['d', 's'],
-                time: { minutes: 1 }
+                format: '(m:[d])',
+                time: { minutes: 1 },
+                withPadding: '000',
+                withoutPadding: '0'
             },
             {
-                type: 'h',
-                below: ['d', 's', 'm'],
-                time: { hours: 1 }
+                format: '(m:[s])',
+                time: { minutes: 1 },
+                withPadding: '00',
+                withoutPadding: '0'
+            },
+            {
+                format: '(h:[d])',
+                time: { hours: 1 },
+                withPadding: '000',
+                withoutPadding: '0'
+            },
+            {
+                format: '(h:[s])',
+                time: { hours: 1 },
+                withPadding: '00',
+                withoutPadding: '0'
+            },
+            {
+                format: '(h:[m])',
+                time: { hours: 1 },
+                withPadding: '00',
+                withoutPadding: '0'
             }
-        ].forEach(function(obj) {
-            obj.below.forEach(function(belowType) {
-                const timeString =
-                    typeof obj.time === 'number'
-                        ? obj.time
-                        : JSON.stringify(obj.time);
-
-                const formatString = `(${obj.type}:[${belowType}])`;
-                const instance = new Aevum(formatString);
-
-                expect(
-                    instance.format(obj.time, { padding: true }),
-                    `padding with format '${formatString}' and time '${timeString}'`
-                ).to.be.equal(belowType === 'd' ? '000' : '00');
-                expect(
-                    instance.format(obj.time, { padding: false }),
-                    `no padding with format '${formatString}' and time '${timeString}'`
-                ).to.be.equal('0');
+        ].forEach(settings => {
+            testWithSettings({
+                format: settings.format,
+                time: settings.time,
+                options: { padding: true },
+                output: settings.withPadding
+            });
+            testWithSettings({
+                format: settings.format,
+                time: settings.time,
+                options: { padding: false },
+                output: settings.withoutPadding
             });
         });
+    });
+
+    it('should render the length correctly', function() {
+        [
+            {
+                format: '[hh]',
+                time: { hours: 1 },
+                output: '01'
+            },
+            {
+                format: '[h]',
+                time: { hours: 1 },
+                output: '1'
+            },
+            {
+                format: '[mm]',
+                time: { minutes: 1 },
+                output: '01'
+            },
+            {
+                format: '[m]',
+                time: { minutes: 1 },
+                output: '1'
+            },
+            {
+                format: '[ss]',
+                time: { seconds: 1 },
+                output: '01'
+            },
+            {
+                format: '[s]',
+                time: { seconds: 1 },
+                output: '1'
+            },
+            {
+                format: '[ddd]',
+                time: { milliseconds: 1 },
+                output: '001'
+            },
+            {
+                format: '[dd]',
+                time: { milliseconds: 1 },
+                output: '01'
+            },
+            {
+                format: '[d]',
+                time: { milliseconds: 1 },
+                output: '1'
+            }
+        ].forEach(testWithSettings);
     });
 
     it('should format timing-indicators correctly', function() {
@@ -255,7 +356,7 @@ describe('aevum.format', function() {
     });
 
     it('should throw time errors', function() {
-        var format = new Aevum('something');
+        var instance = new Aevum('something');
         [
             undefined,
             null,
@@ -268,7 +369,7 @@ describe('aevum.format', function() {
             false
         ].forEach(function(invalid) {
             expect(function() {
-                format.format(invalid);
+                instance.format(invalid);
             }, `element '${invalid}' to be invalid`).to.throw(TypeError);
         });
     });
