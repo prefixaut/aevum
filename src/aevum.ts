@@ -295,9 +295,9 @@ export class Aevum {
             aboveTypeLength = time.hours || time.minutes || time.seconds;
         }
 
-        const renderAnyways = expand && typeLength === 0 && aboveTypeLength > 0;
-
         if (token.optional) {
+            const renderAnyways = expand && typeLength === 0 && aboveTypeLength > 0;
+
             if (!renderAnyways || token.format == null) {
                 return '';
             }
@@ -314,17 +314,21 @@ export class Aevum {
             return build;
         }
 
+        // Store the token-length in new variable, since overriding
+        // it would also change it in the compiled token list and
+        // screw up length-calculations in the future.
+        let tokenLength = token.length;
         if (padding && aboveTypeLength > 0) {
-            token.length = TimeTypes[token.type];
+            tokenLength = TimeTypes[token.type];
         }
 
         const str = '' + typeLength;
-        const paddingLength = token.length - str.length;
+        const paddingLength = tokenLength - str.length;
 
-        if (padding && paddingLength > 0) {
+        if (paddingLength > 0 && (padding || !token.optional)) {
             return '0'.repeat(paddingLength) + str;
-        } else if (!expand && str.length > token.length) {
-            return str.substring(0, token.length);
+        } else if (!expand && str.length > tokenLength) {
+            return str.substring(0, tokenLength);
         } else {
             return str;
         }
