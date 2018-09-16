@@ -177,66 +177,66 @@ describe('aevum.format', function() {
         });
     });
 
-    it('should format expansions correctly', function() {
+    it('should format with "strictFormat" correctly', function() {
         [
             {
                 format: '[d]',
                 time: { milliseconds: 123 },
-                options: { expand: false },
+                options: { strictFormat: true },
                 output: '1'
             },
             {
                 format: '[d]',
                 time: { milliseconds: 123 },
-                options: { expand: true },
+                options: { strictFormat: false },
                 output: '123'
             },
             {
                 format: '[d]',
                 time: { milliseconds: 12 },
-                options: { expand: true },
+                options: { strictFormat: false },
                 output: '12'
             },
             {
                 format: '[s]',
                 time: { seconds: 12 },
-                options: { expand: false },
+                options: { strictFormat: true },
                 output: '1'
             },
             {
                 format: '[s]',
                 time: { seconds: 12 },
-                options: { expand: true },
+                options: { strictFormat: false },
                 output: '12'
             },
             {
                 format: '[m]',
                 time: { minutes: 12 },
-                options: { expand: false },
+                options: { strictFormat: true },
                 output: '1'
             },
             {
                 format: '[m]',
                 time: { minutes: 12 },
-                options: { expand: true },
+                options: { strictFormat: false },
                 output: '12'
             },
             {
                 format: '[h]',
                 time: { hours: 12 },
-                options: { expand: false },
+                options: { strictFormat: true },
                 output: '1'
             },
             {
                 format: '[h]',
                 time: { hours: 12 },
-                options: { expand: true },
+                options: { strictFormat: false },
                 output: '12'
             },
             {
                 format: '[h]',
                 time: { hours: 123 },
-                options: { expand: true },
+                options: { strictFormat: false },
                 output: '123'
             }
         ].forEach(testWithSettings);

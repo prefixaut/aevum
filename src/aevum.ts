@@ -14,7 +14,7 @@ export interface Time {
 
 export interface FormattingOptions {
     /** If elements should be allowed to be longer than the provided length */
-    expand?: boolean;
+    strictFormat?: boolean;
     /** If the time has a bigger unit, it'll automatically apply padding to the units below it */
     padding?: boolean;
 }
@@ -53,7 +53,7 @@ export class Aevum {
     private compiled: { [key: string]: Array<string | Token> };
 
     private readonly defaultOptions: FormattingOptions = {
-        expand: true,
+        strictFormat: false,
         padding: false
     };
 
@@ -108,14 +108,14 @@ export class Aevum {
             arr = this.compiled.all;
         }
 
-        const expand = !!options.expand;
+        const strictFormat = !!options.strictFormat;
         const padding = !!options.padding;
         // The content we build together
         let build = '';
 
         // Rendering all parts of the array and putting it into the build-string.
         for (let i = 0; i < arr.length; i++) {
-            build += this.renderPart(arr[i], time, !!expand, !!padding);
+            build += this.renderPart(arr[i], time, !!strictFormat, !!padding);
         }
 
         return build;
@@ -233,7 +233,7 @@ export class Aevum {
     private renderPart(
         part: string | Token,
         time: Time,
-        expand: boolean,
+        strictFormat: boolean,
         padding: boolean
     ): string {
         if (typeof part === 'string') {
@@ -260,7 +260,7 @@ export class Aevum {
                     build += this.renderPart(
                         part.format[i],
                         time,
-                        expand,
+                        strictFormat,
                         padding
                     );
                 }
@@ -269,13 +269,13 @@ export class Aevum {
         }
 
         // Handle all the other types
-        return this.renderTimeToken(part, time, expand, padding);
+        return this.renderTimeToken(part, time, strictFormat, padding);
     }
 
     private renderTimeToken(
         token: Token,
         time: Time,
-        expand: boolean,
+        strictFormat: boolean,
         padding: boolean
     ) {
         let typeLength = 0;
@@ -296,7 +296,7 @@ export class Aevum {
         }
 
         if (token.optional) {
-            const renderAnyways = expand && typeLength === 0 && aboveTypeLength > 0;
+            const renderAnyways = !strictFormat && typeLength === 0 && aboveTypeLength > 0;
 
             if (!renderAnyways || token.format == null) {
                 return '';
@@ -307,7 +307,7 @@ export class Aevum {
                 build += this.renderPart(
                     token.format[i],
                     time,
-                    expand,
+                    strictFormat,
                     padding
                 );
             }
@@ -327,7 +327,7 @@ export class Aevum {
 
         if (paddingLength > 0 && (padding || !token.optional)) {
             return '0'.repeat(paddingLength) + str;
-        } else if (!expand && str.length > tokenLength) {
+        } else if (strictFormat && str.length > tokenLength) {
             return str.substring(0, tokenLength);
         } else {
             return str;
