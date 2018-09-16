@@ -5,11 +5,11 @@ import { Token, TokenType, tokenize } from './tokenizer';
  * parsed or consumed by aevum in order to format it correctly.
  */
 export interface Time {
-    positive: boolean;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    milliseconds: number;
+    positive?: boolean;
+    hours?: number;
+    minutes?: number;
+    seconds?: number;
+    milliseconds?: number;
 }
 
 export interface FormattingOptions {
@@ -286,13 +286,13 @@ export class Aevum {
             typeLength = time.hours || 0;
         } else if (token.type === TokenType.MINUTE) {
             typeLength = time.minutes || 0;
-            aboveTypeLength = time.hours;
+            aboveTypeLength = time.hours || 0;
         } else if (token.type === TokenType.SECOND) {
             typeLength = time.seconds || 0;
-            aboveTypeLength = time.hours || time.minutes;
+            aboveTypeLength = time.hours || time.minutes || 0;
         } else if (token.type === TokenType.MILLISECOND) {
             typeLength = time.milliseconds || 0;
-            aboveTypeLength = time.hours || time.minutes || time.seconds;
+            aboveTypeLength = time.hours || time.minutes || time.seconds || 0;
         }
 
         if (token.optional) {
