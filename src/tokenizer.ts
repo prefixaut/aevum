@@ -57,7 +57,7 @@ const OPTIONAL_END = ')';
 const OPTIONAL_DEF_END = ':';
 
 /** Regex used to replace hashes with the format */
-const HASH_REGEX = /([^\\])(#)/;
+const HASH_REGEX = /(?<!\\)(#)/;
 
 /**
  * Function to split the format string into an array of strings or Tokens.
@@ -238,7 +238,7 @@ export function tokenize(format: string, startIndex = 0): (string | Token)[] {
                         }
                         build = build.replace(
                             HASH_REGEX,
-                            `$1[${tokenType.repeat(tokenLength)}]`
+                            `[${tokenType.repeat(tokenLength)}]`
                         );
                     }
 

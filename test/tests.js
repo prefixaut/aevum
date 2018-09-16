@@ -37,6 +37,8 @@ describe('aevum.format', function() {
             '(+)',
             '(-)',
             '[?]',
+            '(+:foo bar)',
+            '(-:foo bar)',
             'something(d:here)'
         ].forEach(function(format) {
             expect(function() {
@@ -102,7 +104,10 @@ describe('aevum.format', function() {
             '[[da]]',
             '[[sa]]',
             '[[ma]]',
-            '[[ha]]'
+            '[[ha]]',
+            '(+:#)',
+            '(-:#)',
+            '(?:#)',
         ].forEach(function(format) {
             expect(function() {
                 new Aevum(format);
