@@ -119,3 +119,93 @@ All special types have a maximal length of `1`.
 | ?    | Relative     | Format-Block          | Shorthand for `+` and `-`. Renders a `-` character when the time is negative, otherwise a `+` character
 
 ## Formatting
+
+Formatting turns the previously defined format into a proper string again.
+When formatting, you provide a time which is then getting rendered into the
+format.
+
+Example:
+
+```javascript
+const instance = new Aevum('foo [mm] bar');
+instance.format(123456789); // "foo 17 bar"
+instance.format({ minutes: 45 }); // "foo 45 bar"
+```
+
+As you can see, the `format`-Function accepts a timestamp (in milliseconds)
+or a [`Time-Object`](#time-object). The timestamp is automatically getting
+converted to a time object.
+
+Additionally the function allows you to specify other
+[Formatting Options](#formatting-options) which are getting passed in after the
+time:
+
+```javascript
+instance.format(123456789, { expand: true, padding: true });
+```
+
+### Time Object
+
+A Time Object describes all parts of a time (duh) and how they should be
+rendered. The TypeScript-Interface for it looks like this:
+
+```typescript
+interface Time {
+    positive?: boolean;
+    hours?: number;
+    minutes?: number;
+    seconds?: number;
+    milliseconds?: number;
+}
+```
+
+### Formatting Options
+
+```typescript
+interface FormattingOptions {
+    strictFormat?: boolean;
+    padding?: boolean;
+}
+```
+
+#### Strict-Format
+
+The strict-format option is set to `false` on default. It controls if an
+(optional) format-block should expand the length when the value is longer than
+specified in the format-string.
+
+It'll cut away the content at the end of the part to limit the total length of
+it.
+
+Example:
+
+```javascript
+const instance = new Aevum('[d]');
+instance.format({ milliseconds: 1 }, { expand: false }); // "1"
+instance.format({ milliseconds: 12 }, { expand: false }); // "1"
+instance.format({ milliseconds: 123 }, { expand: false }); // "1"
+
+instance.format({ milliseconds: 1 }, { expand: true }); // "1"
+instance.format({ milliseconds: 12 }, { expand: true }); // "12"
+instance.format({ milliseconds: 123 }, { expand: true }); // "123"
+```
+
+#### Padding
+
+The padding option is set to `false` on default. It controls if time-types
+below the highest type should be padded to the types max length.
+
+Example:
+
+```javascript
+const instance = new Aevum('[h]:[m]:[s].[d]');
+instance.format({ milliseconds: 123 }, { padding: false }); // "0:0:0.123"
+instance.format({ seconds: 45 }, { padding: false }); // "0:0:45.0"
+instance.format({ minutes: 67 }, { padding: false }); // "0:67:0.0"
+instance.format({ hours: 89 }, { padding: false }); // "89:0:0.0"
+
+instance.format({ milliseconds: 123 }, { padding: true }); // "0:0:0.123"
+instance.format({ seconds: 45 }, { padding: true }); // "0:0:45.000"
+instance.format({ minutes: 67 }, { padding: true }); // "0:67:00.000"
+instance.format({ hours: 89 }, { padding: true }); // "89:00:00.000"
+```
