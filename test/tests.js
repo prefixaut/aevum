@@ -341,22 +341,107 @@ describe('aevum.format', function() {
         ].forEach(testWithSettings);
     });
 
+    it('should render the hash correctly', function() {
+        [
+            {
+                format: '(d:foo-#-bar)',
+                time: { milliseconds: 1 },
+                output: 'foo-1-bar',
+            },
+            {
+                format: '(d:foo-#-bar)',
+                time: { milliseconds: 123 },
+                output: 'foo-123-bar',
+            },
+            {
+                format: '(ddd:foo-#-bar)',
+                time: { milliseconds: 1 },
+                output: 'foo-001-bar',
+            },
+            {
+                format: '(ddd:foo-#-bar)',
+                time: { milliseconds: 123 },
+                output: 'foo-123-bar',
+            },
+            {
+                format: '(s:foo-#-bar)',
+                time: { seconds: 1 },
+                output: 'foo-1-bar',
+            },
+            {
+                format: '(s:foo-#-bar)',
+                time: { seconds: 12 },
+                output: 'foo-12-bar',
+            },
+            {
+                format: '(ss:foo-#-bar)',
+                time: { seconds: 1 },
+                output: 'foo-01-bar',
+            },
+            {
+                format: '(ss:foo-#-bar)',
+                time: { seconds: 12 },
+                output: 'foo-12-bar',
+            },
+            {
+                format: '(m:foo-#-bar)',
+                time: { minutes: 1 },
+                output: 'foo-1-bar',
+            },
+            {
+                format: '(m:foo-#-bar)',
+                time: { minutes: 12 },
+                output: 'foo-12-bar',
+            },
+            {
+                format: '(mm:foo-#-bar)',
+                time: { minutes: 1 },
+                output: 'foo-01-bar',
+            },
+            {
+                format: '(mm:foo-#-bar)',
+                time: { minutes: 12 },
+                output: 'foo-12-bar',
+            },
+            {
+                format: '(h:foo-#-bar)',
+                time: { hours: 1 },
+                output: 'foo-1-bar',
+            },
+            {
+                format: '(h:foo-#-bar)',
+                time: { hours: 12 },
+                output: 'foo-12-bar',
+            },
+            {
+                format: '(hh:foo-#-bar)',
+                time: { hours: 1 },
+                output: 'foo-01-bar',
+            },
+            {
+                format: '(hh:foo-#-bar)',
+                time: { hours: 12 },
+                output: 'foo-12-bar',
+            },
+        ].forEach(testWithSettings);
+    });
+
     it('should format timing-indicators correctly', function() {
-        var minus = new Aevum('(-)[d]');
+        const minus = new Aevum('(-)[d]');
         expect(minus.format(-1)).to.be.equal('-1');
         expect(minus.format(1)).to.be.equal('1');
 
-        var plus = new Aevum('(+)[d]');
+        const plus = new Aevum('(+)[d]');
         expect(plus.format(1)).to.be.equal('+1');
         expect(plus.format(-1)).to.be.equal('1');
 
-        var both = new Aevum('[?][d]');
+        const both = new Aevum('[?][d]');
         expect(both.format(1)).to.be.equal('+1');
         expect(both.format(-1)).to.be.equal('-1');
     });
 
     it('should throw time errors', function() {
-        var instance = new Aevum('something');
+        const instance = new Aevum('something');
         [
             undefined,
             null,
