@@ -1,4 +1,5 @@
 module.exports = {
+    base: '/aevum/',
     title: 'Aevum',
     description: 'Documentation for the aevum javascript-library',
     themeConfig: {

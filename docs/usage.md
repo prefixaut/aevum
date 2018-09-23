@@ -1,3 +1,7 @@
+---
+previous: /installation.md
+---
+
 # Usage
 
 This is a short overview on how to use it.
