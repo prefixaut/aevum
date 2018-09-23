@@ -36,4 +36,4 @@ instance.format(1234); // "My timer says: 1.234"
 
 ## Documentation
 
-A more detailed documentation about the installation process, how to build the library as well as as a in-depth description about the usage can be found in the [Documentation]()
+A more detailed documentation about the installation process, how to build the library as well as as a in-depth description about the usage can be found in the [Documentation](https://docs.prefix.moe/aevum)
