@@ -4,7 +4,7 @@ const aevum = require('../dist');
 
 // Difference between AOT and JIT tokenizing
 (function(suite) {
-    const formatString = '(h)[h:](m)[m:](s)[s:](d)[ddd]';
+    const formatString = '(h:#:)(m:#:)(s:#:)(d:ddd)';
     const data = {
         hours: 1,
         minutes: 23,
@@ -47,7 +47,7 @@ const aevum = require('../dist');
     onComplete: completeHandler,
 }));
 
-// Differnce between formatting it with the safe-flag
+// Differnce between formatting with options
 (function(suite) {
     const instance = new aevum.Aevum('[h]:[mm]:[ss].[ddd]');
     const time = {
@@ -57,12 +57,16 @@ const aevum = require('../dist');
         milliseconds: 1,
     };
 
-    suite.add('unsafe', function() {
-        instance.format(time)
-    }).add('safe', function() {
-        instance.format(time, false, true);
+    suite.add('padding, expand', function() {
+        instance.format(time, { padding: true, expand: true });
+    }).add('padding only', function() {
+        instance.format(time, { padding: true, expand: false });
+    }).add('expand only', function() {
+        instance.format(time, { padding: false, expand: true });
+    }).add('none', function() {
+        instance.format(time, { padding: false, expand: false });
     }).run();
-})(new benchmark.Suite('Aevum#format: Un-Safe vs Safe', {
+})(new benchmark.Suite('Aevum#format: formatting options', {
     onStart: startHandler,
     onCycle: cycleHandler,
     onComplete: completeHandler,
