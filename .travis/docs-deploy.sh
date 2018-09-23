@@ -1,2 +1,2 @@
 yarn docs:build
-rsync -arvz ./docs/.vuepress/dist/ travis@prefix.moe:aevum
+rsync -arvz ../docs/.vuepress/dist/ travis@prefix.moe:aevum
