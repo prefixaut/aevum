@@ -1,9 +1,11 @@
 # Aevum
 
-[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg?style=flat-square)](https://travis-ci.org/prefixaut/aevum)
-[![npm Version](https://img.shields.io/npm/v/aevum.svg?style=flat-square)](https://www.npmjs.com/package/aevum)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/32437a5db5abfc7b21e8/test_coverage)](https://codeclimate.com/github/prefixaut/aevum/test_coverage)
-[![npm License](https://img.shields.io/npm/l/aevum.svg?style=flat-square)](https://spdx.org/licenses/MIT.html)
+[![Travis](https://img.shields.io/travis/prefixaut/aevum.svg?style=for-the-badge)](https://travis-ci.org/prefixaut/aevum)
+[![npm Version](https://img.shields.io/npm/v/aevum.svg?style=for-the-badge)](https://www.npmjs.com/package/aevum)
+[![npm bundle size (minified)](https://img.shields.io/bundlephobia/min/aevum.svg?style=for-the-badge)](https://www.npmjs.com/package/aevum)
+[![Maintainability](https://img.shields.io/codeclimate/maintainability-percentage/prefixaut/aevum.svg?style=for-the-badge)](https://codeclimate.com/github/prefixaut/aevum)
+[![Test Coverage](https://img.shields.io/codeclimate/coverage/prefixaut/aevum.svg?style=for-the-badge)](https://codeclimate.com/github/prefixaut/aevum)
+[![npm License](https://img.shields.io/npm/l/aevum.svg?style=for-the-badge)](https://spdx.org/licenses/MIT.html)
 
 ---
 
