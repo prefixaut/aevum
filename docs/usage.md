@@ -1,5 +1,5 @@
 ---
-previous: /installation.md
+prev: /installation.md
 ---
 
 # Usage
