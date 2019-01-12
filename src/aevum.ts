@@ -115,7 +115,7 @@ export class Aevum {
 
         // Rendering all parts of the array and putting it into the build-string.
         for (let i = 0; i < arr.length; i++) {
-            build += this.renderPart(arr[i], time, !!strictFormat, !!padding);
+            build += this.renderPart(arr[i], time, strictFormat, padding);
         }
 
         return build;
@@ -205,7 +205,20 @@ export class Aevum {
         }
 
         if (typeof content !== 'number') {
-            return { positive: true, ...content };
+            const tmp = { positive: true, ...content };
+            if (tmp.milliseconds != null && (tmp.milliseconds > 999 || tmp.milliseconds < 0)) {
+                throw new TypeError('The milliseconds have to be in the range of 0 and 999!');
+            }
+            if (tmp.seconds != null && (tmp.seconds > 59 || tmp.seconds < 0)) {
+                throw new TypeError('The seconds have to be in the rangen of 0 and 59!');
+            }
+            if (tmp.minutes != null && (tmp.minutes > 59 || tmp.minutes < 0)) {
+                throw new TypeError('The minutes have to be in the rangen of 0 and 59!');
+            }
+            if (tmp.hours != null && tmp.hours < 0) {
+                throw new TypeError('The hours have to be greater than 0!');
+            }
+            return tmp;
         }
 
         if (isNaN(content) || !isFinite(content)) {

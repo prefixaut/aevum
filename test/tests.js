@@ -107,7 +107,7 @@ describe('aevum.format', function() {
             '[[ha]]',
             '(+:#)',
             '(-:#)',
-            '(?:#)',
+            '(?:#)'
         ].forEach(function(format) {
             expect(function() {
                 new Aevum(format);
@@ -351,83 +351,83 @@ describe('aevum.format', function() {
             {
                 format: '(d:foo-#-bar)',
                 time: { milliseconds: 1 },
-                output: 'foo-1-bar',
+                output: 'foo-1-bar'
             },
             {
                 format: '(d:foo-#-bar)',
                 time: { milliseconds: 123 },
-                output: 'foo-123-bar',
+                output: 'foo-123-bar'
             },
             {
                 format: '(ddd:foo-#-bar)',
                 time: { milliseconds: 1 },
-                output: 'foo-001-bar',
+                output: 'foo-001-bar'
             },
             {
                 format: '(ddd:foo-#-bar)',
                 time: { milliseconds: 123 },
-                output: 'foo-123-bar',
+                output: 'foo-123-bar'
             },
             {
                 format: '(s:foo-#-bar)',
                 time: { seconds: 1 },
-                output: 'foo-1-bar',
+                output: 'foo-1-bar'
             },
             {
                 format: '(s:foo-#-bar)',
                 time: { seconds: 12 },
-                output: 'foo-12-bar',
+                output: 'foo-12-bar'
             },
             {
                 format: '(ss:foo-#-bar)',
                 time: { seconds: 1 },
-                output: 'foo-01-bar',
+                output: 'foo-01-bar'
             },
             {
                 format: '(ss:foo-#-bar)',
                 time: { seconds: 12 },
-                output: 'foo-12-bar',
+                output: 'foo-12-bar'
             },
             {
                 format: '(m:foo-#-bar)',
                 time: { minutes: 1 },
-                output: 'foo-1-bar',
+                output: 'foo-1-bar'
             },
             {
                 format: '(m:foo-#-bar)',
                 time: { minutes: 12 },
-                output: 'foo-12-bar',
+                output: 'foo-12-bar'
             },
             {
                 format: '(mm:foo-#-bar)',
                 time: { minutes: 1 },
-                output: 'foo-01-bar',
+                output: 'foo-01-bar'
             },
             {
                 format: '(mm:foo-#-bar)',
                 time: { minutes: 12 },
-                output: 'foo-12-bar',
+                output: 'foo-12-bar'
             },
             {
                 format: '(h:foo-#-bar)',
                 time: { hours: 1 },
-                output: 'foo-1-bar',
+                output: 'foo-1-bar'
             },
             {
                 format: '(h:foo-#-bar)',
                 time: { hours: 12 },
-                output: 'foo-12-bar',
+                output: 'foo-12-bar'
             },
             {
                 format: '(hh:foo-#-bar)',
                 time: { hours: 1 },
-                output: 'foo-01-bar',
+                output: 'foo-01-bar'
             },
             {
                 format: '(hh:foo-#-bar)',
                 time: { hours: 12 },
-                output: 'foo-12-bar',
-            },
+                output: 'foo-12-bar'
+            }
         ].forEach(testWithSettings);
     });
 
@@ -456,7 +456,14 @@ describe('aevum.format', function() {
             -NaN,
             -Infinity,
             true,
-            false
+            false,
+            { milliseconds: -1 },
+            { milliseconds: 1000 },
+            { seconds: -1 },
+            { seconds: 60 },
+            { minutes: -1 },
+            { minutes: 60 },
+            { hours: -1 }
         ].forEach(function(invalid) {
             expect(function() {
                 instance.format(invalid);
