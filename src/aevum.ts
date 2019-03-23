@@ -1,4 +1,4 @@
-import { Token, TokenType, tokenize } from './tokenizer';
+import { Token, TokenType, Tokenizer } from './tokenizer';
 
 /**
  * An interface which represents the Schema of how the time is
@@ -37,6 +37,8 @@ function pushValueInto<T>(value: T, ...arrays: (T)[][]) {
     });
 }
 
+const tokenizer = new Tokenizer();
+
 /**
  * Class which represents an Aevum formatter.
  * On initialization it's parsing the provided format which can then be
@@ -66,7 +68,7 @@ export class Aevum {
      * @see https://github.com/prefixaut/aevum
      */
     constructor(formatString: string) {
-        this.tokens = tokenize(formatString);
+        this.tokens = tokenizer.tokenize(formatString);
         this.compiled = this.shake(this.tokens);
     }
 
@@ -206,14 +208,23 @@ export class Aevum {
 
         if (typeof content !== 'number') {
             const tmp = { positive: true, ...content };
-            if (tmp.milliseconds != null && (tmp.milliseconds > 999 || tmp.milliseconds < 0)) {
-                throw new TypeError('The milliseconds have to be in the range of 0 and 999!');
+            if (
+                tmp.milliseconds != null &&
+                (tmp.milliseconds > 999 || tmp.milliseconds < 0)
+            ) {
+                throw new TypeError(
+                    'The milliseconds have to be in the range of 0 and 999!'
+                );
             }
             if (tmp.seconds != null && (tmp.seconds > 59 || tmp.seconds < 0)) {
-                throw new TypeError('The seconds have to be in the rangen of 0 and 59!');
+                throw new TypeError(
+                    'The seconds have to be in the rangen of 0 and 59!'
+                );
             }
             if (tmp.minutes != null && (tmp.minutes > 59 || tmp.minutes < 0)) {
-                throw new TypeError('The minutes have to be in the rangen of 0 and 59!');
+                throw new TypeError(
+                    'The minutes have to be in the rangen of 0 and 59!'
+                );
             }
             if (tmp.hours != null && tmp.hours < 0) {
                 throw new TypeError('The hours have to be greater than 0!');
@@ -309,7 +320,8 @@ export class Aevum {
         }
 
         if (token.optional) {
-            const renderAnyways = !strictFormat && typeLength === 0 && aboveTypeLength > 0;
+            const renderAnyways =
+                !strictFormat && typeLength === 0 && aboveTypeLength > 0;
 
             if (!renderAnyways || token.format == null) {
                 return '';
