@@ -241,8 +241,13 @@ export function tokenize(format: string, startIndex = 0): (string | Token)[] {
                         build = build.replace(
                             HASH_REGEX,
                             (match) => {
-                                const cut = match.length > 1 ? match.slice(0, match.length - 1) : match;
-                                return `${cut}[${(tokenType as TokenType).repeat(tokenLength)}]`;
+                                const content = `[${(tokenType as TokenType).repeat(tokenLength)}]`;
+                                if (match.length > 1) {
+                                    const cut = match.slice(0, match.length - 1);
+                                    return `${cut}${content}`;
+                                } else {
+                                    return content;
+                                }
                             }
                         );
                     }

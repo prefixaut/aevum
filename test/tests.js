@@ -427,7 +427,77 @@ describe('aevum.format', function() {
                 format: '(hh:foo-#-bar)',
                 time: { hours: 12 },
                 output: 'foo-12-bar'
-            }
+            },
+            {
+                format: '(hh:aaa-#-)(mm:bbb-#-)(ss:ccc-#-)(ddd:ddd-#)',
+                time: { milliseconds: 1 },
+                output: 'ddd-001',
+            },
+            {
+                format: '(hh:aaa-#-)(mm:bbb-#-)(ss:ccc-#-)(ddd:ddd-#)',
+                time: { seconds: 1, milliseconds: 1 },
+                output: 'ccc-01-ddd-001',
+            },
+            {
+                format: '(hh:aaa-#-)(mm:bbb-#-)(ss:ccc-#-)(ddd:ddd-#)',
+                time: { minutes: 1, seconds: 1, milliseconds: 1 },
+                output: 'bbb-01-ccc-01-ddd-001',
+            },
+            {
+                format: '(hh:aaa-#-)(mm:bbb-#-)(ss:ccc-#-)(ddd:ddd-#)',
+                time: { hours: 1, minutes: 1, seconds: 1, milliseconds: 1 },
+                output: 'aaa-01-bbb-01-ccc-01-ddd-001',
+            },
+            {
+                format: '(h:#)',
+                time: { hours: 1 },
+                output: '1',
+            },
+            {
+                format: '(hh:#)',
+                time: { hours: 1 },
+                output: '01',
+            },
+            {
+                format: '(hhh:#)',
+                time: { hours: 1 },
+                output: '001',
+            },
+            {
+                format: '(m:#)',
+                time: { minutes: 1 },
+                output: '1',
+            },
+            {
+                format: '(mm:#)',
+                time: { minutes: 1 },
+                output: '01',
+            },
+            {
+                format: '(s:#)',
+                time: { seconds: 1 },
+                output: '1',
+            },
+            {
+                format: '(ss:#)',
+                time: { seconds: 1 },
+                output: '01',
+            },
+            {
+                format: '(d:#)',
+                time: { milliseconds: 1 },
+                output: '1',
+            },
+            {
+                format: '(dd:#)',
+                time: { milliseconds: 1 },
+                output: '01',
+            },
+            {
+                format: '(ddd:#)',
+                time: { milliseconds: 1 },
+                output: '001',
+            },
         ].forEach(testWithSettings);
     });
 
