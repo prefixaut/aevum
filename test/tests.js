@@ -107,7 +107,8 @@ describe('aevum.format', function() {
             '[[ha]]',
             '(+:#)',
             '(-:#)',
-            '(?:#)'
+            '(?:#)',
+            '[d\\]',
         ].forEach(function(format) {
             expect(function() {
                 new Aevum(format);
@@ -343,6 +344,41 @@ describe('aevum.format', function() {
                 time: { milliseconds: 1 },
                 output: '1'
             }
+        ].forEach(testWithSettings);
+    });
+
+    it('should escape characters correctly', function() {
+        [
+            {
+                format: '\\t\\e\\s\\t',
+                time: { milliseconds: 1 },
+                output: 'test'
+            },
+            {
+                format: '\\[d]',
+                time: { milliseconds: 1 },
+                output: '[d]'
+            },
+            {
+                format: '\\(d)',
+                time: { milliseconds: 1 },
+                output: '(d)'
+            },
+            {
+                format: '(d:\\#)',
+                time: { milliseconds: 1 },
+                output: '#'
+            },
+            {
+                format: '(d:\\(aaa))',
+                time: { milliseconds: 1 },
+                output: '(aaa)'
+            },
+            {
+                format: '(d:\\[aaa])',
+                time: { milliseconds: 1 },
+                output: '[aaa]'
+            },
         ].forEach(testWithSettings);
     });
 
