@@ -221,9 +221,7 @@ export class Tokenizer {
 
     private handleTypeInFormat() {
         if (this.character === FORMAT_END) {
-            const token = this.createTokenFromType(this.build, false);
-            this.reset(false);
-            this.tokens.push(token);
+            this.handleFormatDefintion(false);
         } else {
             this.build += this.character;
         }
@@ -231,9 +229,7 @@ export class Tokenizer {
 
     private handleStateInOptionalType() {
         if (this.character === OPTIONAL_END) {
-            const token = this.createTokenFromType(this.build, true);
-            this.reset(false);
-            this.tokens.push(token);
+            this.handleFormatDefintion(true);
         } else if (this.character === OPTIONAL_DEF_END) {
             const token = this.createTokenFromType(
                 this.build,
@@ -247,6 +243,12 @@ export class Tokenizer {
         } else {
             this.build += this.character;
         }
+    }
+
+    private handleFormatDefintion(optional: boolean) {
+        const token = this.createTokenFromType(this.build, optional);
+        this.reset(false);
+        this.tokens.push(token);
     }
 
     private handleStateInOptionalFormat() {
