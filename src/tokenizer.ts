@@ -182,11 +182,8 @@ export class Tokenizer {
         startIndex: number = 0
     ) {
         if (character === ESCAPE) {
-            this.previousState = this.currentState;
-            this.currentState = TokenizerState.ESCAPE;
-        }
-
-        if (character === OPTIONAL_START || character === FORMAT_START) {
+            this.updateState(TokenizerState.ESCAPE);
+        } else if (character === OPTIONAL_START || character === FORMAT_START) {
             this.handleStart(character, currentIndex, startIndex);
         } else {
             this.build += character;
@@ -198,19 +195,14 @@ export class Tokenizer {
         currentIndex: number,
         startIndex: number = 0
     ) {
-        if (character === OPTIONAL_END) {
-            this.handleDefinition(currentIndex, startIndex);
-        } else if (character === OPTIONAL_DEF_END) {
+        if (character === FORMAT_END) {
             const token = this.createTokenFromType(
                 this.build,
                 startIndex + currentIndex,
-                this.isTokenOptional
+                false
             );
-
-            this.build = '';
-            this.currentState = TokenizerState.IN_OPTIONAL_FORMAT;
-            this.tokenType = token.type;
-            this.tokenLength = token.length;
+            this.reset(false);
+            this.tokens.push(token);
         } else {
             this.build += character;
         }
@@ -221,8 +213,25 @@ export class Tokenizer {
         currentIndex: number,
         startIndex: number = 0
     ) {
-        if (character === FORMAT_END) {
-            this.handleDefinition(currentIndex, startIndex);
+        if (character === OPTIONAL_END) {
+            const token = this.createTokenFromType(
+                this.build,
+                startIndex + currentIndex,
+                true
+            );
+            this.reset(false);
+            this.tokens.push(token);
+        } else if (character === OPTIONAL_DEF_END) {
+            const token = this.createTokenFromType(
+                this.build,
+                startIndex + currentIndex,
+                this.isTokenOptional
+            );
+
+            this.build = '';
+            this.updateState(TokenizerState.IN_OPTIONAL_FORMAT);
+            this.tokenType = token.type;
+            this.tokenLength = token.length;
         } else {
             this.build += character;
         }
@@ -234,8 +243,7 @@ export class Tokenizer {
         startIndex: number = 0
     ) {
         if (character === ESCAPE) {
-            this.previousState = this.currentState;
-            this.currentState = TokenizerState.ESCAPE;
+            this.updateState(TokenizerState.ESCAPE);
         } else if (character === OPTIONAL_END) {
             const newTokenizePos = currentIndex - this.build.length;
             this.build = this.handleHashSugar(
@@ -244,11 +252,12 @@ export class Tokenizer {
                 startIndex
             );
 
+            const innerTokenizer = new Tokenizer();
             this.tokens.push({
                 type: this.tokenType,
                 length: this.tokenLength,
                 optional: true,
-                format: this.tokenize(this.build, newTokenizePos)
+                format: innerTokenizer.tokenize(this.build, newTokenizePos)
             });
 
             this.reset(false);
@@ -276,10 +285,10 @@ export class Tokenizer {
                     pos: startIndex + currentIndex
                 });
             }
-            this.currentState = TokenizerState.IN_OPTIONAL_TYPE;
+            this.updateState(TokenizerState.IN_OPTIONAL_TYPE);
             this.isTokenOptional = true;
         } else {
-            this.currentState = TokenizerState.IN_FORMAT;
+            this.updateState(TokenizerState.IN_FORMAT);
             this.isTokenOptional = false;
         }
     }
@@ -305,30 +314,15 @@ export class Tokenizer {
             });
         }
 
+        const tokenValue = `[${this.tokenType.repeat(this.tokenLength)}]`;
         return this.build.replace(HASH_REGEX, match => {
-            const tokenValue = `[${this.tokenType.repeat(this.tokenLength)}]`;
             if (match.length > 1) {
                 const cut = match.slice(0, match.length - 1);
-                return `${cut}${tokenValue}`;
+                return cut + tokenValue;
             } else {
                 return tokenValue;
             }
         });
-    }
-
-    private handleDefinition(currentIndex: number, startIndex: number = 0) {
-        const token = this.createTokenFromType(
-            this.build,
-            startIndex + currentIndex,
-            this.isTokenOptional
-        );
-
-        if (this.isTokenOptional) {
-            token.format = [{ ...token, optional: false }];
-        }
-
-        this.tokens.push(token);
-        this.reset(false);
     }
 
     private prepareError(
@@ -340,6 +334,11 @@ export class Tokenizer {
             str = str.replace('{' + key + '}', replace[key]);
         });
         throw new SyntaxError(str);
+    }
+
+    private updateState(newState: TokenizerState) {
+        this.previousState = this.currentState;
+        this.currentState = newState;
     }
 
     private createTokenFromType(
