@@ -199,6 +199,30 @@ describe('aevum.format', function() {
                 output: '12'
             },
             {
+                format: '(d)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: false },
+                output: '123',
+            },
+            {
+                format: '(d)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: true },
+                output: '1',
+            },
+            {
+                format: '(dd)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: true },
+                output: '12',
+            },
+            {
+                format: '(ddd)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: true },
+                output: '123',
+            },
+            {
                 format: '[s]',
                 time: { seconds: 12 },
                 options: { strictFormat: true },
@@ -211,6 +235,24 @@ describe('aevum.format', function() {
                 output: '12'
             },
             {
+                format: '(s)',
+                time: { seconds: 12 },
+                options: { strictFormat: false },
+                output: '12',
+            },
+            {
+                format: '(s)',
+                time: { seconds: 12 },
+                options: { strictFormat: true },
+                output: '1',
+            },
+            {
+                format: '(ss)',
+                time: { seconds: 12 },
+                options: { strictFormat: true },
+                output: '12',
+            },
+            {
                 format: '[m]',
                 time: { minutes: 12 },
                 options: { strictFormat: true },
@@ -221,6 +263,24 @@ describe('aevum.format', function() {
                 time: { minutes: 12 },
                 options: { strictFormat: false },
                 output: '12'
+            },
+            {
+                format: '(m)',
+                time: { minutes: 12 },
+                options: { strictFormat: false },
+                output: '12',
+            },
+            {
+                format: '(m)',
+                time: { minutes: 12 },
+                options: { strictFormat: true },
+                output: '1',
+            },
+            {
+                format: '(m)',
+                time: { minutes: 12 },
+                options: { strictFormat: true },
+                output: '12',
             },
             {
                 format: '[h]',
@@ -239,7 +299,19 @@ describe('aevum.format', function() {
                 time: { hours: 123 },
                 options: { strictFormat: false },
                 output: '123'
-            }
+            },
+            {
+                format: '(h)',
+                time: { hours: 123 },
+                options: { strictFormat: false },
+                output: '123',
+            },
+            {
+                format: '(h)',
+                time: { hours: 123 },
+                options: { strictFormat: true },
+                output: '1',
+            },
         ].forEach(testWithSettings);
     });
 

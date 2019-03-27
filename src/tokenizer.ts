@@ -1,71 +1,19 @@
-import { TimeTypes } from './aevum';
-
-export enum TokenType {
-    MILLISECOND = 'd',
-    SECOND = 's',
-    MINUTE = 'm',
-    HOUR = 'h',
-    POSITIVE = '+',
-    NEGATIVE = '-',
-    RELATIVE = '?'
-}
-
-export interface Token {
-    type: TokenType;
-    length: number;
-    optional: boolean;
-    format?: (string | Token)[];
-}
-
-enum TokenizerState {
-    /** When in normal text */
-    STRING,
-    /**
-     * When the previous character was a backslash
-     * to escape the next one, when in a string
-     */
-    ESCAPE_STRING,
-    /**
-     * When the previous character was a backslash
-     * to escape the next one, inside of an optional format block
-     */
-    ESCAPE_OPTIONAL_FORMAT,
-    /** If it's inside a format */
-    IN_FORMAT,
-    /** If it's inside an optional type-definition */
-    IN_OPTIONAL_TYPE,
-    /** If it's inside an optional format block */
-    IN_OPTIONAL_FORMAT
-}
-
-enum Errors {
-    // Syntax errors
-    EMPTY_FORMAT = 'Invalid Syntax on position ${pos}! An format-block may not be empty!',
-    NESTED_OPTIONAL = 'Invalid Syntax on position {pos}! You cannot nest optional blocks!',
-
-    // Type erros
-    EMPTY_TYPE = 'Invalid Type-Defintion on position {pos}! The format/optional block does not have a type!',
-    MIXED_TYPE = 'Invalid Type-Defintion on position {pos}! You may not mix types!',
-    UNKNOWN_TYPE = 'Invalid Type-Defintion on position {pos}! The type "{type}" does not exist!',
-    TYPE_LENGTH = 'Invalid Type-Definition on position {pos}! The given length is bigger than allowed! Set length: {length}, maximal length: {max}',
-
-    // Validation errors
-    INVALID_TYPE_IN_FORMAT = 'The Type "{type}" on position {pos} can not be used inside a normal format block!',
-    INVALID_TYPE_IN_OPTIONAL = 'The Type "{type}" on position {pos} can not be used inside an optional format block!',
-    HASH_COMBINE = 'The #-shortcut can not be combined with the Type "{type}" on position {pos}!',
-    UNEXPECTED_CONTENT_IN_TYPE = 'Unexpected "{content}" on position {pos}! Expected a continuation of type-definition',
-    UNEXPECTED_EOF = 'Unexpected end of format!'
-}
-
-const ESCAPE = '\\';
-const FORMAT_START = '[';
-const FORMAT_END = ']';
-const OPTIONAL_START = '(';
-const OPTIONAL_END = ')';
-const OPTIONAL_DEF_END = ':';
-
-/** Regex used to replace hashes with the format */
-const HASH_REGEX = /(?:(?:[^\\])([#])|^(#))/;
+import {
+    Token,
+    TokenizerState,
+    TokenType,
+    Errors,
+    ESCAPE,
+    HASH_REGEX,
+    OPTIONAL_START,
+    OPTIONAL_END,
+    OPTIONAL_DEF_END,
+    FORMAT_END,
+    FORMAT_START,
+    TimeTypes,
+    OptionalToken
+} from './common';
+import { prepareError } from './utils';
 
 /**
  * Tokenizer Class which creates tokens from a format-string.
@@ -329,15 +277,12 @@ export class Tokenizer {
         errorTemplate: string,
         replace?: { [other: string]: any }
     ): string {
-        let str = errorTemplate;
-        const variables = {
-            pos: this.startIndex + this.currentIndex,
-            ...replace
-        };
-        Object.keys(variables).forEach(key => {
-            str = str.replace('{' + key + '}', variables[key]);
-        });
-        throw new SyntaxError(str);
+        throw new SyntaxError(
+            prepareError(errorTemplate, {
+                pos: this.startIndex + this.currentIndex,
+                ...replace
+            })
+        );
     }
 
     private createTokenFromType(input: string, optional: boolean): Token {
@@ -347,13 +292,27 @@ export class Tokenizer {
         }
 
         const indexOffset = this.startIndex + this.currentIndex - input.length;
-        const token: Token = { type: input.trim()[0] as TokenType, length: 0, optional };
+        let token: Token;
+        if (optional) {
+            token = {
+                type: input.trim()[0] as TokenType,
+                length: 0,
+                optional: true,
+                format: []
+            };
+        } else {
+            token = {
+                type: input.trim()[0] as TokenType,
+                length: 0,
+                optional: false
+            };
+        }
         let max: number;
 
         switch (token.type) {
             case TokenType.NEGATIVE:
             case TokenType.POSITIVE:
-                if (!optional) {
+                if (!token.optional) {
                     throw this.prepareError(Errors.INVALID_TYPE_IN_FORMAT, {
                         pos: indexOffset,
                         type: token.type
@@ -364,7 +323,7 @@ export class Tokenizer {
                 break;
 
             case TokenType.RELATIVE:
-                if (optional) {
+                if (token.optional) {
                     throw this.prepareError(Errors.INVALID_TYPE_IN_OPTIONAL, {
                         pos: indexOffset,
                         type: token.type
@@ -377,6 +336,18 @@ export class Tokenizer {
             case TokenType.MINUTE:
             case TokenType.SECOND:
             case TokenType.MILLISECOND:
+                if (
+                    token.optional &&
+                    (token.format == null || token.format.length === 0)
+                ) {
+                    token.format = [
+                        {
+                            type: token.type,
+                            length: token.length,
+                            optional: false
+                        }
+                    ];
+                }
                 max = TimeTypes[token.type];
                 break;
 
