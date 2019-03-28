@@ -10,6 +10,19 @@ export interface Time {
     milliseconds?: number;
 }
 
+export interface OptimizedTime {
+    positive: boolean;
+    h: OptimizedTimeType;
+    m: OptimizedTimeType;
+    s: OptimizedTimeType;
+    d: OptimizedTimeType;
+}
+
+export interface OptimizedTimeType {
+    value: number;
+    aboveTypeValue: number;
+}
+
 export interface FormattingOptions {
     /** If elements should be allowed to be longer than the provided length */
     strictFormat?: boolean;

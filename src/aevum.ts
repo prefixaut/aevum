@@ -1,7 +1,16 @@
+import {
+    FormattingOptions,
+    OptimizedTime,
+    OptionalToken,
+    Time,
+    TimeTypes,
+    Token,
+    TokenType
+} from './common';
 import { Tokenizer } from './tokenizer';
-import { toTime, optimizeTokens } from './utils';
-import { FormattingOptions, Time, TimeTypes, Token, TokenType, OptionalToken } from './common';
+import { optimizeTime, optimizeTokens, toTime } from './utils';
 
+// Private tokenizer instance to ... tokenize. duh
 const tokenizer = new Tokenizer();
 
 /**
@@ -48,11 +57,18 @@ export class Aevum {
         content: number | Time,
         options: FormattingOptions = this.defaultOptions
     ): string {
+        // Default the options
         if (options != null) {
             options = { ...this.defaultOptions, ...options };
         }
 
+        // Converts (if needed) the timestamp to a time-object and validates it
         const time = toTime(content);
+
+        // Optimize the time content, to prevent costly calculations
+        // for each single token
+        const optimizedTime = optimizeTime(time, options);
+
         // The shook array that is being used.
         let arr: (string | Token)[] = [];
         // Keys for both the time and compiled object
@@ -80,7 +96,7 @@ export class Aevum {
 
         // Rendering all parts of the array and putting it into the build-string.
         for (let i = 0; i < arr.length; i++) {
-            build += this.renderPart(arr[i], time, options);
+            build += this.renderPart(arr[i], optimizedTime, options);
         }
 
         return build;
@@ -88,9 +104,10 @@ export class Aevum {
 
     private renderPart(
         part: string | Token,
-        time: Time,
+        time: OptimizedTime,
         options: FormattingOptions
     ): string {
+        // Simple string-parts do not need to be rendered specially
         if (typeof part === 'string') {
             return part;
         }
@@ -101,11 +118,12 @@ export class Aevum {
         }
 
         // Handle special type '+' and '-'
-        if (
-            part.type === TokenType.NEGATIVE ||
-            part.type === TokenType.POSITIVE
-        ) {
-            return this.renderTokenFormat(part as OptionalToken, time, options);
+        if (part.optional) {
+            return this.renderRemainingOptional(
+                part as OptionalToken,
+                time,
+                options
+            );
         }
 
         // Handle all the other types
@@ -114,55 +132,45 @@ export class Aevum {
 
     private renderTimeToken(
         token: Token,
-        time: Time,
+        time: OptimizedTime,
         options: FormattingOptions
     ) {
-        let typeLength = 0;
         let build = '';
-        let aboveTypeLength = 0;
+        const value = time[token.type].value;
+        const aboveTypeLength = time[token.type].aboveTypeLength;
 
-        if (token.type === TokenType.HOUR) {
-            typeLength = time.hours || 0;
-        } else if (token.type === TokenType.MINUTE) {
-            typeLength = time.minutes || 0;
-            aboveTypeLength = time.hours || 0;
-        } else if (token.type === TokenType.SECOND) {
-            typeLength = time.seconds || 0;
-            aboveTypeLength = time.hours || time.minutes || 0;
-        } else if (token.type === TokenType.MILLISECOND) {
-            typeLength = time.milliseconds || 0;
-            aboveTypeLength = time.hours || time.minutes || time.seconds || 0;
-        }
-
+        // The only optional tokens which are left, are with the type
+        // NEGATIVE, POSITIVE and RELATIVE. All other were cut during
+        // the optimization process in the constructor.
         if (token.optional) {
             if (
                 !(
                     !options.strictFormat &&
-                    typeLength === 0 &&
+                    value === 0 &&
                     aboveTypeLength > 0
                 )
             ) {
                 return '';
             } else {
-                return this.renderTokenFormat(token, time, options);
+                return this.renderRemainingOptional(token, time, options);
             }
         }
 
         // Store the token-length in new variable, since overriding
         // it would also change it in the compiled token list and
         // screw up length-calculations in the future.
-        let tokenLength = token.length;
+        let maximalLength = token.length;
         if (options.padding && aboveTypeLength > 0) {
-            tokenLength = TimeTypes[token.type];
+            maximalLength = TimeTypes[token.type];
         }
 
-        const str = '' + typeLength;
-        const paddingLength = tokenLength - str.length;
+        const str = '' + value;
+        const paddingLength = maximalLength - str.length;
 
         if (paddingLength > 0 && (options.padding || !token.optional)) {
             build = '0'.repeat(paddingLength) + str;
-        } else if (options.strictFormat && str.length > tokenLength) {
-            build = str.substring(0, tokenLength);
+        } else if (options.strictFormat && str.length > maximalLength) {
+            build = str.substring(0, maximalLength);
         } else {
             build = str;
         }
@@ -170,13 +178,23 @@ export class Aevum {
         return build;
     }
 
-    private renderTokenFormat(
+    /**
+     * Helper functions which renders the remaining optional types,
+     * which could not get optimized before the run.
+     * Currently the case for NEGATIVE, POSITIVE and RELATIVE tokens.
+     *
+     * @param token The optional token that should get rendered
+     * @param time The time time that should get rendered
+     * @param options Formatting-Options
+     */
+    private renderRemainingOptional(
         token: OptionalToken,
-        time: Time,
+        time: OptimizedTime,
         options: FormattingOptions
     ) {
         let build = '';
 
+        // Only render the tokens which are eligable to be rendered
         if (
             (token.type === TokenType.NEGATIVE && !time.positive) ||
             (token.type === TokenType.POSITIVE && time.positive)

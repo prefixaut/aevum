@@ -1,4 +1,10 @@
-import { Time, Token, TokenType } from './common';
+import {
+    FormattingOptions,
+    OptimizedTime,
+    Time,
+    Token,
+    TokenType
+} from './common';
 
 export function optimizeTokens(tokens: (string | Token)[]) {
     const hours: (string | Token)[] = [];
@@ -48,7 +54,7 @@ export function optimizeTokens(tokens: (string | Token)[]) {
                 arrays.push(hours);
         }
 
-        const formatTokens = token.format || [token];
+        const formatTokens = token.optional ? token.format : [token];
         const formatLength = formatTokens.length;
         for (let k = 0; k < formatLength; k++) {
             pushValueInto(formatTokens[k], ...arrays);
@@ -143,4 +149,29 @@ export function prepareError(
         str = str.replace('{' + key + '}', variables[key]);
     });
     return str;
+}
+
+export function optimizeTime(
+    time: Time,
+    options: FormattingOptions
+): OptimizedTime {
+    return {
+        positive: time.positive || false,
+        h: {
+            value: time.hours || 0,
+            aboveTypeValue: 0
+        },
+        m: {
+            value: time.minutes || 0,
+            aboveTypeValue: time.hours || 0
+        },
+        s: {
+            value: time.seconds || 0,
+            aboveTypeValue: time.hours || time.minutes || 0
+        },
+        d: {
+            value: time.milliseconds || 0,
+            aboveTypeValue: time.hours || time.minutes || time.seconds || 0
+        }
+    };
 }
