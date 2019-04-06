@@ -277,7 +277,7 @@ describe('aevum.format', function() {
                 output: '1',
             },
             {
-                format: '(m)',
+                format: '(mm)',
                 time: { minutes: 12 },
                 options: { strictFormat: true },
                 output: '12',

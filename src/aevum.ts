@@ -137,22 +137,20 @@ export class Aevum {
     ) {
         let build = '';
         const value = time[token.type].value;
-        const aboveTypeLength = time[token.type].aboveTypeLength;
+        const aboveTypeValue = time[token.type].aboveTypeValue;
 
         // The only optional tokens which are left, are with the type
         // NEGATIVE, POSITIVE and RELATIVE. All other were cut during
         // the optimization process in the constructor.
         if (token.optional) {
             if (
-                !(
-                    !options.strictFormat &&
-                    value === 0 &&
-                    aboveTypeLength > 0
-                )
+                !options.strictFormat ||
+                value !== 0 ||
+                aboveTypeValue < 1
             ) {
-                return '';
-            } else {
                 return this.renderRemainingOptional(token, time, options);
+            } else {
+                return '';
             }
         }
 
@@ -160,7 +158,7 @@ export class Aevum {
         // it would also change it in the compiled token list and
         // screw up length-calculations in the future.
         let maximalLength = token.length;
-        if (options.padding && aboveTypeLength > 0) {
+        if (options.padding && aboveTypeValue > 0) {
             maximalLength = TimeTypes[token.type];
         }
 

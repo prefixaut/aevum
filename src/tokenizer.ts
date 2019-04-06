@@ -1,17 +1,16 @@
 import {
+    Errors,
+    ESCAPE,
+    FORMAT_END,
+    FORMAT_START,
+    HASH_REGEX,
+    OPTIONAL_DEF_END,
+    OPTIONAL_END,
+    OPTIONAL_START,
+    TimeTypes,
     Token,
     TokenizerState,
     TokenType,
-    Errors,
-    ESCAPE,
-    HASH_REGEX,
-    OPTIONAL_START,
-    OPTIONAL_END,
-    OPTIONAL_DEF_END,
-    FORMAT_END,
-    FORMAT_START,
-    TimeTypes,
-    OptionalToken
 } from './common';
 import { prepareError } from './utils';
 
@@ -167,6 +166,10 @@ export class Tokenizer {
         }
     }
 
+    /**
+     * Handler function to append the current character to the build
+     * until it reaches the end and call {@link handleFormatDefinition}.
+     */
     private handleTypeInFormat() {
         if (this.character === FORMAT_END) {
             this.handleFormatDefintion(false);
@@ -296,17 +299,55 @@ export class Tokenizer {
         if (optional) {
             token = {
                 type: input.trim()[0] as TokenType,
-                length: 0,
+                length: input.length,
                 optional: true,
                 format: []
             };
         } else {
             token = {
                 type: input.trim()[0] as TokenType,
-                length: 0,
+                length: input.length,
                 optional: false
             };
         }
+
+        this.validateTokenType(input, token, indexOffset);
+        return this.validateMaxTokenLength(token, indexOffset);
+    }
+
+    private validateTokenType(input: string, token: Token, indexOffset: number) {
+        let errContent = '';
+        let errPos = -1;
+
+        // Calculate the provided length
+        for (let i = 1; i < token.length; i++) {
+            const c = input[i];
+
+            if (c !== token.type) {
+                errContent += input[i];
+                if (errPos < 0) {
+                    errPos = i;
+                }
+                break;
+            }
+        }
+
+        if (errPos > -1) {
+            throw this.prepareError(Errors.MIXED_TYPE, {
+                pos: indexOffset + errPos,
+                content: errContent
+            });
+        }
+    }
+
+    /**
+     * Validates the token with the maximal length and applies
+     * the formats for optional tokens.
+     *
+     * @param token The token to validate
+     * @param indexOffset The offset for errors
+     */
+    private validateMaxTokenLength(token: Token, indexOffset: number) {
         let max: number;
 
         switch (token.type) {
@@ -336,10 +377,7 @@ export class Tokenizer {
             case TokenType.MINUTE:
             case TokenType.SECOND:
             case TokenType.MILLISECOND:
-                if (
-                    token.optional &&
-                    (token.format == null || token.format.length === 0)
-                ) {
+                if (token.optional) {
                     token.format = [
                         {
                             type: token.type,
@@ -358,32 +396,10 @@ export class Tokenizer {
                 });
         }
 
-        let errContent = '';
-        let errPos = -1;
-
-        // Calculate the provided length
-        for (let i = 1; i < input.length; i++) {
-            const c = input[i];
-
-            if (c !== token.type) {
-                errContent = input.substring(i);
-                errPos = i;
-                break;
-            }
-        }
-        token.length = input.length;
-
-        if (errPos > -1) {
-            throw this.prepareError(Errors.MIXED_TYPE, {
-                pos: indexOffset + errPos,
-                content: errContent
-            });
-        }
-
-        if (max > 0 && input.length > max) {
+        if (max > 0 && token.length > max) {
             throw this.prepareError(Errors.TYPE_LENGTH, {
                 pos: indexOffset,
-                length: input.length,
+                length: token.length,
                 max
             });
         }
