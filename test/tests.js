@@ -112,7 +112,7 @@ describe('aevum.format', function() {
         ].forEach(function(format) {
             expect(function() {
                 new Aevum(format);
-            }, `expected ${format} to throw an error`).to.throw(SyntaxError);
+            }, `expected ${format} to throw an syntax error`).to.throw(SyntaxError);
         });
     });
 
@@ -131,6 +131,23 @@ describe('aevum.format', function() {
             format: 'hi-[d]-welcome-[d]-to-[d]-somewhere',
             time: 1,
             output: 'hi-1-welcome-1-to-1-somewhere'
+        });
+    });
+
+    it('should throw type errors', function() {
+        const format = new Aevum('a');
+        [
+            { milliseconds: -1 },
+            { milliseconds: 1000 },
+            { seconds: -1 },
+            { seconds: 60 },
+            { minutes: -1 },
+            { minutes: 60 },
+            { hours: - 1 },
+        ].forEach(function(time) {
+            expect(function() {
+                format.format(time);
+            }, `expected ${format} to throw an error`).to.throw(TypeError);
         });
     });
 
@@ -199,6 +216,30 @@ describe('aevum.format', function() {
                 output: '12'
             },
             {
+                format: '(d)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: false },
+                output: '123',
+            },
+            {
+                format: '(d)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: true },
+                output: '1',
+            },
+            {
+                format: '(dd)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: true },
+                output: '12',
+            },
+            {
+                format: '(ddd)',
+                time: { milliseconds: 123 },
+                options: { strictFormat: true },
+                output: '123',
+            },
+            {
                 format: '[s]',
                 time: { seconds: 12 },
                 options: { strictFormat: true },
@@ -211,6 +252,24 @@ describe('aevum.format', function() {
                 output: '12'
             },
             {
+                format: '(s)',
+                time: { seconds: 12 },
+                options: { strictFormat: false },
+                output: '12',
+            },
+            {
+                format: '(s)',
+                time: { seconds: 12 },
+                options: { strictFormat: true },
+                output: '1',
+            },
+            {
+                format: '(ss)',
+                time: { seconds: 12 },
+                options: { strictFormat: true },
+                output: '12',
+            },
+            {
                 format: '[m]',
                 time: { minutes: 12 },
                 options: { strictFormat: true },
@@ -221,6 +280,24 @@ describe('aevum.format', function() {
                 time: { minutes: 12 },
                 options: { strictFormat: false },
                 output: '12'
+            },
+            {
+                format: '(m)',
+                time: { minutes: 12 },
+                options: { strictFormat: false },
+                output: '12',
+            },
+            {
+                format: '(m)',
+                time: { minutes: 12 },
+                options: { strictFormat: true },
+                output: '1',
+            },
+            {
+                format: '(mm)',
+                time: { minutes: 12 },
+                options: { strictFormat: true },
+                output: '12',
             },
             {
                 format: '[h]',
@@ -239,7 +316,19 @@ describe('aevum.format', function() {
                 time: { hours: 123 },
                 options: { strictFormat: false },
                 output: '123'
-            }
+            },
+            {
+                format: '(h)',
+                time: { hours: 123 },
+                options: { strictFormat: false },
+                output: '123',
+            },
+            {
+                format: '(h)',
+                time: { hours: 123 },
+                options: { strictFormat: true },
+                output: '1',
+            },
         ].forEach(testWithSettings);
     });
 

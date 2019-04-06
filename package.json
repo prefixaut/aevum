@@ -17,6 +17,7 @@
   "scripts": {
     "test": "mocha ./test/tests.js",
     "coverage": "nyc --reporter=lcov mocha ./test/tests.js",
+    "report": "nyc --reporter=html mocha ./test/tests.js",
     "benchmark": "node ./test/benchmarks.js",
     "prepublish": "yarn run build",
     "build": "tsc",
