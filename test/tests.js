@@ -112,7 +112,7 @@ describe('aevum.format', function() {
         ].forEach(function(format) {
             expect(function() {
                 new Aevum(format);
-            }, `expected ${format} to throw an error`).to.throw(SyntaxError);
+            }, `expected ${format} to throw an syntax error`).to.throw(SyntaxError);
         });
     });
 
@@ -131,6 +131,23 @@ describe('aevum.format', function() {
             format: 'hi-[d]-welcome-[d]-to-[d]-somewhere',
             time: 1,
             output: 'hi-1-welcome-1-to-1-somewhere'
+        });
+    });
+
+    it('should throw type errors', function() {
+        const format = new Aevum('a');
+        [
+            { milliseconds: -1 },
+            { milliseconds: 1000 },
+            { seconds: -1 },
+            { seconds: 60 },
+            { minutes: -1 },
+            { minutes: 60 },
+            { hours: - 1 },
+        ].forEach(function(time) {
+            expect(function() {
+                format.format(time);
+            }, `expected ${format} to throw an error`).to.throw(TypeError);
         });
     });
 

@@ -6,6 +6,13 @@ import {
     TokenType
 } from './common';
 
+const limits = {
+    milliseconds: 999,
+    seconds: 59,
+    minutes: 59,
+    hours: -1,
+};
+
 export function optimizeTokens(tokens: (string | Token)[]) {
     const hours: (string | Token)[] = [];
     const minutes: (string | Token)[] = [];
@@ -84,27 +91,15 @@ export function toTime(content: number | Time): Time {
 
     if (typeof content !== 'number') {
         const tmp = { positive: true, ...content };
-        if (
-            tmp.milliseconds != null &&
-            (tmp.milliseconds > 999 || tmp.milliseconds < 0)
-        ) {
-            throw new TypeError(
-                'The milliseconds have to be in the range of 0 and 999!'
-            );
-        }
-        if (tmp.seconds != null && (tmp.seconds > 59 || tmp.seconds < 0)) {
-            throw new TypeError(
-                'The seconds have to be in the rangen of 0 and 59!'
-            );
-        }
-        if (tmp.minutes != null && (tmp.minutes > 59 || tmp.minutes < 0)) {
-            throw new TypeError(
-                'The minutes have to be in the rangen of 0 and 59!'
-            );
-        }
-        if (tmp.hours != null && tmp.hours < 0) {
-            throw new TypeError('The hours have to be greater than 0!');
-        }
+        Object.keys(limits).forEach(limitTypeName => {
+            const value = tmp[limitTypeName];
+            const max = limits[limitTypeName];
+            if (value != null && (value < 0 || (max > 0 && value > max))) {
+                throw new TypeError(
+                    `The ${limitTypeName} have to be in the range of 0 and ${max}!`
+                );
+            }
+        });
         return tmp;
     }
 
