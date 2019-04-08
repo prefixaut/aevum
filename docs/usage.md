@@ -145,7 +145,7 @@ Additionally the function allows you to specify other
 time:
 
 ```javascript
-instance.format(123456789, { expand: true, padding: true });
+instance.format(123456789, { strictFormat: false, padding: true });
 ```
 
 ### Time Object
@@ -156,10 +156,10 @@ rendered. The TypeScript-Interface for it looks like this:
 ```typescript
 interface Time {
     positive?: boolean;
-    hours?: number;
-    minutes?: number;
-    seconds?: number;
-    milliseconds?: number;
+    hours?: number; // >= 0
+    minutes?: number; // >= 0 < 60
+    seconds?: number; // >= 0 < 60
+    milliseconds?: number; // >= 0 < 1000
 }
 ```
 
@@ -175,7 +175,7 @@ interface FormattingOptions {
 #### Strict-Format
 
 The strict-format option is set to `false` on default. It controls if an
-(optional) format-block should expand the length when the value is longer than
+(optional-)format-block should expand the length when the value is longer than
 specified in the format-string.
 
 It'll cut away the content at the end of the part to limit the total length of
@@ -184,14 +184,36 @@ it.
 Example:
 
 ```javascript
-const instance = new Aevum('[d]');
-instance.format({ milliseconds: 1 }, { expand: false }); // "1"
-instance.format({ milliseconds: 12 }, { expand: false }); // "1"
-instance.format({ milliseconds: 123 }, { expand: false }); // "1"
+const instance1 = new Aevum('[d]');
+instance1.format({ milliseconds: 1 }, { strictFormat: false }); // "1"
+instance1.format({ milliseconds: 12 }, { strictFormat: false }); // "12"
+instance1.format({ milliseconds: 123 }, { strictFormat: false }); // "123"
 
-instance.format({ milliseconds: 1 }, { expand: true }); // "1"
-instance.format({ milliseconds: 12 }, { expand: true }); // "12"
-instance.format({ milliseconds: 123 }, { expand: true }); // "123"
+instance1.format({ milliseconds: 1 }, { strictFormat: true }); // "1"
+instance1.format({ milliseconds: 12 }, { strictFormat: true }); // "1"
+instance1.format({ milliseconds: 123 }, { strictFormat: true }); // "1"
+```
+
+```javascript
+const instance2 = new Aevum('[dd]');
+instance2.format({ milliseconds: 1 }, { strictFormat: false }); // "1"
+instance2.format({ milliseconds: 12 }, { strictFormat: false }); // "12"
+instance2.format({ milliseconds: 123 }, { strictFormat: false }); // "123"
+
+instance2.format({ milliseconds: 1 }, { strictFormat: true }); // "01"
+instance2.format({ milliseconds: 12 }, { strictFormat: true }); // "12"
+instance2.format({ milliseconds: 123 }, { strictFormat: true }); // "12"
+```
+
+```javascript
+const instance3 = new Aevum('[ddd]');
+instance3.format({ milliseconds: 1 }, { strictFormat: false }); // "1"
+instance3.format({ milliseconds: 12 }, { strictFormat: false }); // "12"
+instance3.format({ milliseconds: 123 }, { strictFormat: false }); // "123"
+
+instance3.format({ milliseconds: 1 }, { strictFormat: true }); // "001"
+instance3.format({ milliseconds: 12 }, { strictFormat: true }); // "012"
+instance3.format({ milliseconds: 123 }, { strictFormat: true }); // "123"
 ```
 
 #### Padding
