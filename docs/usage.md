@@ -60,10 +60,19 @@ However, it may not exeed the maximal length of that type, as it would throw
 a `SyntaxError` when trying to do so.
 Read more in the [Formatting](#formatting)-Section.
 
-Examples:
-- `[h]`
-- `[ss]`
-- `[ddd]`
+```javascript
+const instance1 = new Aevum('hello [m]');
+instance1.format({ seconds: 12 }); // "hello 0"
+instance1.format({ hours: 3 }); // "hello 0"
+instance1.format({ minutes: 45 }); // "hello 45"
+```
+
+```javascript
+const instance1 = new Aevum('hello [ddd]');
+instance1.format({ seconds: 67 }); // "hello 000"
+instance1.format({ minutes: 8 }); // "hello 000"
+instance1.format({ milliseconds: 901 }); // "hello 901"
+```
 
 ### Optional Format-Blocks
 
@@ -73,6 +82,14 @@ get rendered when the value exists.
 The Optional Format-Block is defined nearly the same as a regular format-block.
 The difference is however that it's wrapped between regular brackets: `(`/`)`
 instead with squared brackets.
+
+```javascript
+const instance = new Aevum('hello (h)');
+instance.format({ milliseconds: 123 }); // "hello "
+instance.format({ seconds: 45 }); // "hello "
+instance.format({ minutes: 67 }); // "hello "
+instance.format({ hours: 89 }); // "hello 89"
+```
 
 Additionally, it allows you to specify what content will be rendered when the
 value exists.
@@ -85,20 +102,61 @@ changed however by adding a colon (`:`) after the type.
 What makes the content really powerful, is that you're able to put in string-
 content and other format-blocks.
 
+```javascript
+const instance1 = new Aevum('hello (m:world!)');
+instance.format({ milliseconds: 123 }); // "hello ";
+instance.format({ seconds: 45 }); // "hello ";
+instance.format({ minutes: 67 }); // "hello world!"
+```
+
+```javascript
+const instance1 = new Aevum('hello (m:[m]:[s].[d])');
+instance.format({ milliseconds: 123 }); // "hello ";
+instance.format({ seconds: 45 }); // "hello ";
+instance.format({ minutes: 67, seconds: 45, milliseconds: 123 }); // "hello 67:45.321"
+```
+
 To not make it a hassle to repeat the already typed type from the beginning,
 every `#` character is syntactic sugar to replace it with a format-block of
 the optional type.
 
-Examples:
-- `(h)`
-- `(m:foo bar)`
-- `(s:[ss]s)`
-- `(d:#ms)` -> `(d:[d]ms)`
+```javascript
+const instance1 = new Aevum('hello (m)');
+instance1.format({ minutes: 12 }); // "hello 12"
+```
 
-::: warning NOTE
-It's not possible to stack optional format-blocks into other ones.
+```javascript
+const instance2 = new Aevum('hello (m:[m]'));
+instance2.format({ minutes: 34 }); // "hello 34"
+```
+
+```javascript
+const instance3 = new Aevum('hello (m:#)');
+instance3.format({ minutes: 56 }); // "hello 56"
+```
+
+::: tip TIP
+You can also escape content in an optional format like you can in an a regular
+string with the `\`-character.
+Notice that you have to use `\\`, as i.e. a single `\#` would let javascript
+try to escape it, which doesn't work as intended.
+:::
+
+```javascript
+const instance = new Aevum('hello (s:world, i\'m the \\#1 in this place \\[d])');
+instance.format({ seconds: 12 }); // "hello world, i'm the #1 in this place [d]"
+```
+
+::: danger WARNING
+It's not possible to put optional format-blocks into other ones.
 Use multiple defintions instead.
 :::
+
+```javascript
+const instance = new Aevum('test(m:(h))'); // This throws a "SyntaxError"!
+
+const instance = new Aevum('test(m)(h)'); // You may do it like this instead
+```
 
 ## Types
 
