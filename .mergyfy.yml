@@ -1,0 +1,11 @@
+pull_request_rules:
+  - name: Automatic dependency update
+    conditions:
+      - status-success=continuous-integration/travis-ci/pr
+      - status-success=continuous-integration/travis-ci/push
+      - status-success=codeclimate/diff-coverage
+      - author=dependabot-preview
+    actions:
+      merge:
+        strict: smart
+        method: merge
