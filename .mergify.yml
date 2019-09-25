@@ -9,3 +9,13 @@ pull_request_rules:
       merge:
         strict: smart
         method: merge
+  - name: Automatic dependency update
+    conditions:
+      - status-success=continuous-integration/travis-ci/pr
+      - status-success=continuous-integration/travis-ci/push
+      - status-success=codeclimate/diff-coverage
+      - author=dependabot[bot]
+    actions:
+      merge:
+        strict: smart
+        method: merge
