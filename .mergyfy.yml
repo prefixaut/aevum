@@ -4,7 +4,7 @@ pull_request_rules:
       - status-success=continuous-integration/travis-ci/pr
       - status-success=continuous-integration/travis-ci/push
       - status-success=codeclimate/diff-coverage
-      - author=dependabot-preview
+      - author=dependabot-preview[bot]
     actions:
       merge:
         strict: smart
