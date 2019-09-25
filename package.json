@@ -32,7 +32,7 @@
     "benchmark": "^2.1.4",
     "chai": "^4.1.2",
     "chalk": "^2.3.0",
-    "mocha": "^3.5.3",
+    "mocha": "^6.2.0",
     "nyc": "^11.3.0",
     "tslint": "^5.8.0",
     "tslint-config-prettier": "^1.15.0",
