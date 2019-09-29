@@ -20,9 +20,7 @@
     "report": "nyc --reporter=html mocha ./test/tests.js",
     "benchmark": "node ./test/benchmarks.js",
     "prepublish": "yarn run build",
-    "build": "tsc",
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -36,8 +34,7 @@
     "nyc": "^14.1.1",
     "tslint": "^5.8.0",
     "tslint-config-prettier": "^1.15.0",
-    "typescript": "^3.0.1",
-    "vuepress": "^1.1.0"
+    "typescript": "^3.0.1"
   },
   "peerDependencies": {
     "tslib": "^1.9.0"
